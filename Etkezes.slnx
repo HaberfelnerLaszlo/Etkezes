@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="Etkezes.AppHost/Etkezes.AppHost.csproj" />
+  <Project Path="Etkezes.ServiceDefaults/Etkezes.ServiceDefaults.csproj" />
+  <Project Path="Etkezes_Ellenor/Etkezes_Ellenor.csproj" />
+</Solution>
