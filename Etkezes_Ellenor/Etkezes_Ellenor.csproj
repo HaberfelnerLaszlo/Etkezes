@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
@@ -8,13 +8,14 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Etkezes.ServiceDefaults\Etkezes.ServiceDefaults.csproj" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.3" />
+    <PackageReference Include="Microsoft.FluentUI.AspNetCore.Components" Version="4.13.2" />
+    <PackageReference Include="Microsoft.FluentUI.AspNetCore.Components.Icons" Version="4.13.2" />
   </ItemGroup>
 
   <ItemGroup>
-    <Reference Include="libzkfpcsharp">
-      <HintPath>libzkfpcsharp.dll</HintPath>
-    </Reference>
+    <ProjectReference Include="..\Etkezes.ServiceDefaults\Etkezes.ServiceDefaults.csproj" />
+    <ProjectReference Include="..\FingerPrintServive\FingerPrintService.csproj" />
   </ItemGroup>
 
 </Project>

@@ -1,4 +1,10 @@
 using Etkezes_Ellenor.Components;
+using Etkezes_Ellenor.Data;
+using Etkezes_Ellenor.Services;
+
+using FingerPrintService;
+
+using Microsoft.FluentUI.AspNetCore.Components;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -8,6 +14,13 @@ builder.AddServiceDefaults();
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
+builder.Services.AddDbContext<EtkezesDBcontext>();
+
+builder.Services.AddHttpClient();
+
+builder.Services.AddFluentUIComponents();
+builder.Services.AddScoped<FPService>();
+builder.Services.AddScoped<UserService>();
 var app = builder.Build();
 
 app.MapDefaultEndpoints();

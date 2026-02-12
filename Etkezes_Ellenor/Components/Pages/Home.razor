@@ -1,7 +1,75 @@
 ﻿@page "/"
+@using FingerPrintService
+@inject FPService fpService
+@inject UserService userService
+@inject ILogger<Home> logger
+@inject IToastService toastService
+@implements IDisposable
 
-<PageTitle>Home</PageTitle>
+<PageTitle>Kezdőlap</PageTitle>
+<FluentLayout Style="margin-top: 10px;">
+    <FluentHeader>
+        Étkezés ellenőrző alkalmazás
+        <FluentLabel Style="margin-left: 10px; font-size: 0.9em; color: var(--neutral-foreground-warning);">
+            @errorMessage
+        </FluentLabel>
+    </FluentHeader>
+    <FluentBodyContent Style="height: 90%;">
+        <FluentGrid Justify="JustifyContent.SpaceBetween"
+                    Style="background-color: var(--neutral-layer-3); overflow: hidden; resize: horizontal; padding: 4px;">
+            <FluentGridItem Style="min-width: 200px;" Justify="JustifyContent.Center">
+                <img src="images/positive-check-mark.png" alt="Enabled" style="width: 500px; height: 500px;" />
+            </FluentGridItem>
+            <FluentGridItem Justify="JustifyContent.FlexEnd" Gap="10px">
+                <FluentStack Orientation="Orientation.Vertical" VerticalAlignment="VerticalAlignment.Center" HorizontalAlignment="HorizontalAlignment.Right">
+                    <FluentButton Appearance="Appearance.Neutral" OnClick="() => { errorMessage = string.Empty; fpService.Open(); }">Indítás</FluentButton>
+                    <FluentButton Appearance="Appearance.Neutral" OnClick="() => fpService.NewFingerprint()">Regisztráció</FluentButton>
+                </FluentStack>
+            </FluentGridItem>
+        </FluentGrid>
+    </FluentBodyContent>
+    <FluentFooter>
+        2026.02.12 21:42
+        <FluentSpacer/>
+        <p>@message</p>
+        <FluentSpacer/>
+        Verzió: 1.0.0
+    </FluentFooter>
+</FluentLayout>
+@code {
+    string message = "A jók", errorMessage = "A hibák";
 
-<h1>Hello, world!</h1>
+    protected override async Task OnInitializedAsync()
+    {
+        fpService.MessageChanged += OnMessageChanged!;
+    }
 
-Welcome to your new app.
+    private void OnMessageChanged(object sender, FPMessageChangedEventArgs e)
+    {
+        if (e.IsError)
+        {
+            // Handle error messages
+            errorMessage = e.Message;
+            toastService.ShowError(e.Message);
+            Console.WriteLine($"Error: {errorMessage}");
+        }
+        else
+        {
+            // Handle success messages
+            message = e.Message;
+            toastService.ShowSuccess(e.Message);
+            Console.WriteLine($"Success: {message}");
+        }
+    }
+    private void OnRegistationSuccess(object sender, FPRegisteredEventArgs e) 
+    {
+        message = e.FingerPrint; 
+        toastService.ShowSuccess(e.FingerPrint); 
+        Console.WriteLine($"Registration Success: {message}"); 
+    }
+    public void Dispose()
+    {
+        fpService.Close();
+        fpService.MessageChanged -= OnMessageChanged!;
+    }
+}

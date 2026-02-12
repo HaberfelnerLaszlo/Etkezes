@@ -2,4 +2,5 @@
   <Project Path="Etkezes.AppHost/Etkezes.AppHost.csproj" />
   <Project Path="Etkezes.ServiceDefaults/Etkezes.ServiceDefaults.csproj" />
   <Project Path="Etkezes_Ellenor/Etkezes_Ellenor.csproj" />
+  <Project Path="FingerPrintServive/FingerPrintService.csproj" Id="99cbc044-1fae-435f-97ed-03f45cb22434" />
 </Solution>
