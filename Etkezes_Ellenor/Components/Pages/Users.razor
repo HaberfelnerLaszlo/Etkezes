@@ -1,0 +1,31 @@
+﻿@page "/users"
+@inject UserService userService
+<h3>Felhasználók</h3>
+<FluentDataGrid Items="@users">
+    <PropertyColumn Property="u=>u.Name" Title="Név" />
+    <PropertyColumn Property="u => u.Osztaly" Title="Osztály" />
+    <PropertyColumn Property="u => u.Etkezik" Title="Étkezik?" />
+    <PropertyColumn Property="u => u.FpId" Title="Id" />
+    <PropertyColumn Property="u => u.FingerPrint1" Title="1. Ujjlenyomat" />
+    <PropertyColumn Property="u => u.FingerPrint2" Title="2. Ujjlenyomat" />
+    <TemplateColumn Title="Műveletek">
+        <FluentButton Appearance="Appearance.Accent" OnClick="@(() => EditUser(context))">Szerkesztés</FluentButton>
+        <FluentButton Appearance="Appearance.Accent" OnClick="@(() => DeleteUser(context))">Törlés</FluentButton>
+    </TemplateColumn>
+</FluentDataGrid>
+
+@code {
+    IQueryable<User> users;
+    protected override async Task OnInitializedAsync()
+    {
+        users = userService.GetAllUsers().AsQueryable();
+    }
+    private void EditUser(User user)
+    {
+        // Implement edit functionality
+    }
+    private void DeleteUser(User user)
+    {
+        // Implement delete functionality
+    }
+}

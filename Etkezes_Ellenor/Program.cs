@@ -14,13 +14,17 @@ builder.AddServiceDefaults();
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
-builder.Services.AddDbContext<EtkezesDBcontext>();
+builder.Services.AddDbContext<EtkezesDBcontext>( ServiceLifetime.Singleton);
 
 builder.Services.AddHttpClient();
 
 builder.Services.AddFluentUIComponents();
-builder.Services.AddScoped<FPService>();
+builder.Services.AddSingleton<FPService>();
+builder.Services.AddHostedService<BgService>();
+builder.Services.AddScoped<LoginUserService>();
 builder.Services.AddScoped<UserService>();
+builder.Services.AddScoped<DataService>();
+
 var app = builder.Build();
 
 app.MapDefaultEndpoints();

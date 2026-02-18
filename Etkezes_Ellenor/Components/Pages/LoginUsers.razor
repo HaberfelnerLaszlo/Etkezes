@@ -1,0 +1,29 @@
+﻿@page "/LoginUsers"
+@inject LoginUserService loginService
+
+<h3>LoginUsers</h3>
+@if(users.Count()== 0)
+{
+    <p>Nincs elmentett felhasználó.</p>
+}
+else
+{
+    <FluentDataGrid Items="@users">
+        <PropertyColumn Property="u => u.Name" Title="Név" />
+        <PropertyColumn Property="u => u.UserName" Title="Felhasználónév" />
+        <PropertyColumn Property="u => u.Role" Title="Szerepkör" />
+        <PropertyColumn Property="u => u.FpId" Title="FP Id" />
+        <PropertyColumn Property="u => u.FingerPrint1.Substring(0, 10)" Title="1. Ujjlenyomat" />
+        <PropertyColumn Property="u => u.FingerPrint2.Substring(0, 10)" Title="2. Ujjlenyomat" />
+        <PropertyColumn Property="u => u.Password.ToString()" Title="Jelszó_Hash" />
+    </FluentDataGrid>
+}
+
+@code {
+    IQueryable<LoginUser> users = new List<LoginUser>().AsQueryable();
+    protected override async Task OnInitializedAsync()
+    {
+        users = loginService.GetAllUsers().AsQueryable();
+    }
+
+}

@@ -1,9 +1,13 @@
 ﻿@page "/"
 @using FingerPrintService
 @inject FPService fpService
+@inject LoginUserService loginService
 @inject UserService userService
+@inject DataService dataService
 @inject ILogger<Home> logger
 @inject IToastService toastService
+@inject IDialogService dialogService
+@inject NavigationManager navigationManager
 @implements IDisposable
 
 <PageTitle>Kezdőlap</PageTitle>
@@ -13,6 +17,15 @@
         <FluentLabel Style="margin-left: 10px; font-size: 0.9em; color: var(--neutral-foreground-warning);">
             @errorMessage
         </FluentLabel>
+        <FluentSpacer/>
+        @if (isDeviceConnected)
+        {
+            <FluentIcon Value="@(new Icons.Filled.Size20.DeviceMeetingRoom())" Color="Color.Neutral"/>
+        }
+        else 
+        {
+            <FluentIcon Value="@(new Icons.Regular.Size20.DeviceMeetingRoomRemote())" Color="Color.Disabled" />
+        }
     </FluentHeader>
     <FluentBodyContent Style="height: 90%;">
         <FluentGrid Justify="JustifyContent.SpaceBetween"
@@ -23,53 +36,137 @@
             <FluentGridItem Justify="JustifyContent.FlexEnd" Gap="10px">
                 <FluentStack Orientation="Orientation.Vertical" VerticalAlignment="VerticalAlignment.Center" HorizontalAlignment="HorizontalAlignment.Right">
                     <FluentButton Appearance="Appearance.Neutral" OnClick="() => { errorMessage = string.Empty; fpService.Open(); }">Indítás</FluentButton>
-                    <FluentButton Appearance="Appearance.Neutral" OnClick="() => fpService.NewFingerprint()">Regisztráció</FluentButton>
+                    <FluentButton Appearance="Appearance.Neutral" OnClick="@(() => navigationManager.NavigateTo("/reg"))">Regisztráció</FluentButton>
+                    <FluentButton Appearance="Appearance.Neutral" OnClick="@(() => navigationManager.NavigateTo("/loginusers"))">Felhasználók</FluentButton>
+                    <FluentButton Appearance="Appearance.Neutral" OnClick="@(() => navigationManager.NavigateTo("/users"))">Étkezők</FluentButton>
                 </FluentStack>
             </FluentGridItem>
         </FluentGrid>
     </FluentBodyContent>
     <FluentFooter>
-        2026.02.12 21:42
+        2026.02.18 21:42
         <FluentSpacer/>
         <p>@message</p>
         <FluentSpacer/>
-        Verzió: 1.0.0
+        Verzió: 0.3.0
     </FluentFooter>
 </FluentLayout>
 @code {
     string message = "A jók", errorMessage = "A hibák";
-
+    bool isDeviceConnected = false;
     protected override async Task OnInitializedAsync()
     {
         fpService.MessageChanged += OnMessageChanged!;
+        fpService.SuccessIdentification += OnIdentificationSuccess!;
     }
-
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            isDeviceConnected = fpService.DeviceConnected();
+            var users = dataService.GetUsers().ToList();
+            foreach (var item in users)
+            {
+                if (userService.UserExists(item.Id))
+                {
+                    continue;
+                }
+                userService.AddUser(item);
+            }
+            if (fpService.ClearDb()) 
+            { 
+                dataService.LoginUsersLoad();
+                userService.UserLoading();
+                fpService.SwitchIdentifyMode(true);
+                errorMessage = "Azonosítás bekapcsolva.";
+            }
+            else toastService.ShowError("Nem sikerült törölni az adatbázist, az azonosítás nem kapcsolható be!");
+            StateHasChanged();
+        }
+    }
     private void OnMessageChanged(object sender, FPMessageChangedEventArgs e)
     {
         if (e.IsError)
         {
             // Handle error messages
+            if(e.Code == -17) // Assuming 100 is the code for fingerprint device connection error
+            {
+                toastService.ShowCommunicationToast(new ToastParameters<CommunicationToastContent>()
+                {
+                    Intent = ToastIntent.Error,
+                    Title = "Nem regisztrált ujjlenyomat",
+                    TopCTAType = ToastTopCTAType.Timestamp,
+                    Timeout = 8000,
+                    PrimaryAction = "Igen",
+                    OnPrimaryAction = EventCallback.Factory.Create<ToastResult>(this, ClickedRegistration),
+                    Content = new CommunicationToastContent()
+                    {
+                        Details = "Szeretné regisztrálni az ujjlenyomatott?",
+                    },
+                });
+                return;
+            }
             errorMessage = e.Message;
             toastService.ShowError(e.Message);
-            Console.WriteLine($"Error: {errorMessage}");
+            Console.WriteLine($"Error: {errorMessage} Code: {e.Code}");
         }
         else
         {
             // Handle success messages
             message = e.Message;
             toastService.ShowSuccess(e.Message);
-            Console.WriteLine($"Success: {message}");
+            // if (e.Code == 100) // Assuming 100 is the code for successful fingerprint device connection
+            // {
+            //     isDeviceConnected = true;
+            // }
+            Console.WriteLine($"Success: {message} Code: {e.Code}");
         }
     }
-    private void OnRegistationSuccess(object sender, FPRegisteredEventArgs e) 
+    private async void ClickedRegistration()
     {
-        message = e.FingerPrint; 
-        toastService.ShowSuccess(e.FingerPrint); 
-        Console.WriteLine($"Registration Success: {message}"); 
+        var dialog = await dialogService.ShowDialogAsync<SearchUserDialog>(new DialogParameters()
+        {
+            //Height = "400px",
+            Title = $"Felhasználó  keresése",
+            PreventDismissOnOverlayClick = true,
+            PreventScroll = true,
+        });
+
+        var result = await dialog.Result;
+        if (!result.Cancelled && result.Data != null)
+        {
+            dataService.SetUser((User)result.Data);
+             navigationManager.NavigateTo("/fpreg");
+       }
+    }
+    // private void OnRegistationSuccess(object sender, FPRegisteredEventArgs e) 
+    // {
+    //     message = e.FingerPrint; 
+    //     toastService.ShowSuccess(e.FingerPrint); 
+    //     Console.WriteLine($"Registration Success: {message}"); 
+    // }
+    // Add this method to handle the SuccessIdentification event
+    private void OnIdentificationSuccess(object? sender, FPSuccessIdentificationEventArgs e)
+    {
+        if (loginService.HandleSuccessfulIdentification(e.Fid))
+        {
+            // Handle successful login
+            toastService.ShowSuccess("Sikeres azonosítás! Üdvözlünk!"); //TODO: Personalizált üdvözlés a felhasználó nevével, belépés felajánlása
+            logger.LogInformation($"User with FP ID {e.Fid} successfully identified.");
+            return;
+        }
+        if (userService.HandleSuccessfulIdentification(e.Fid))
+        {
+            // Handle successful user identification
+            toastService.ShowSuccess("Sikeres azonosítás! Üdvözlünk az étkezők között!");
+            logger.LogInformation($"User with FP ID {e.Fid} successfully identified.");
+        }
+        // TODO: Add your event handling logic here
     }
     public void Dispose()
     {
-        fpService.Close();
+        //fpService.Close();
         fpService.MessageChanged -= OnMessageChanged!;
+        fpService.SuccessIdentification -= OnIdentificationSuccess!;
     }
 }

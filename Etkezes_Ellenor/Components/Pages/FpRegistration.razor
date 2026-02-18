@@ -1,0 +1,144 @@
+﻿@page "/fpreg"
+@inject FPService fpService
+@inject UserService userService
+@inject DataService dataService
+@inject NavigationManager navigationManager
+@inject ILogger<FpRegistration> logger
+@inject IToastService toastService
+@implements IDisposable
+<FluentStack Orientation="Orientation.Horizontal">
+    <h3>Újjlenyomat Regisztráció</h3>
+    <FluentSpacer />
+    @if (fpService.DeviceConnected())
+    {
+        <FluentIcon Value="@(new Icons.Filled.Size20.DeviceMeetingRoom())" Color="Color.Neutral" />
+    }
+    else
+    {
+        <FluentIcon Value="@(new Icons.Regular.Size20.DeviceMeetingRoomRemote())" Color="Color.Disabled" />
+    }
+</FluentStack>
+@if(editUser)
+{
+<FluentEditForm Model="@newUser" OnValidSubmit="HandleValidSubmit">
+    <FluentStack Orientation="Orientation.Vertical" VerticalGap="10">
+        <FluentTextField @bind-Value="newUser.Name" Label="Név" Required="true" />
+        <FluentSelect TOption="string" Label="Osztály" Required="true" Items="@osztalyok" OptionValue="@(o=>o)" OptionText="@(o=>o + " osztály")" Placeholder="Válassza ki az osztályt" SelectedOption="newUser.Osztaly"/>
+        <FluentSwitch @bind-Value="newUser.Etkezik" Label="Étkezik?" />
+        <FluentButton Appearance="Appearance.Accent" Type="ButtonType.Submit">Mentés</FluentButton>
+    </FluentStack>
+</FluentEditForm>
+}
+else
+{
+    <FluentStack Orientation="Orientation.Vertical">
+        <FluentLabel>Regisztrálandó felhasználó:</FluentLabel>
+        <FluentLabel Style="font-weight: bold; margin-left: 15px;">@newUser.Name</FluentLabel>
+        <FluentSpacer />
+        <FluentLabel>Osztály:</FluentLabel>
+        <FluentLabel Style="font-weight: bold; margin-left: 15px;">@newUser.Osztaly</FluentLabel>
+        <FluentLabel>Étkezik?</FluentLabel>
+        <FluentLabel Style="font-weight: bold; margin-left: 15px;">@(newUser.Etkezik ? "Igen" : "Nem")</FluentLabel>
+        <FluentButton Appearance="Appearance.Accent" OnClick="@(() => navigationManager.NavigateTo("/"))">Vissza a kezdőlapra</FluentButton>
+    </FluentStack>
+        <FluentButton Appearance="Appearance.Neutral"
+                      OnClick="@(() => SaveUser())" Disabled="@(string.IsNullOrWhiteSpace(newUser.FingerPrint1))">Mentés</FluentButton>
+        <FluentButton Appearance="Appearance.Neutral" OnClick="@(() => editUser = true)">Adatok szerkesztése</FluentButton>
+}
+    <FluentButton Appearance="Appearance.Neutral" OnClick="() => RegisterFingerprint()" Disabled="@(!((fpIndex <= 2)&&(String.IsNullOrWhiteSpace(newUser.FingerPrint1) || String.IsNullOrWhiteSpace(newUser.FingerPrint2))))">@fpIndex . Ujjlenyomat Regisztráció</FluentButton>
+    <FluentLabel Typo="Typography.H3" hidden="@String.IsNullOrEmpty(message)">@message</FluentLabel>
+
+
+@code {
+    private User newUser = new User();
+    IList<string> osztalyok = new List<string> { "5.a", "5.b", "5.c", "6.a", "6.b", "6.c", "7.a", "7.b", "7.c", "8.a", "8.b", "8.c", "9.a", "9.b", "10.a", "10.b", "11.a", "11.b", "12.a", "12.b", };
+    int fpIndex = 1;
+    bool editUser = false;
+    string message = string.Empty;
+    protected override async Task OnInitializedAsync()
+    {
+        newUser = dataService.GetUser();
+        if(newUser == null)
+        {
+            toastService.ShowError("Nem töltődött be a felhasználó!");
+            navigationManager.NavigateTo("/");
+        }
+        fpService.MessageChanged += OnMessageChanged!;
+        fpService.FingerPrintRegistered += OnRegistationSuccess!;
+
+    }
+    private void OnMessageChanged(object sender, FPMessageChangedEventArgs e)
+    {
+        if (e.IsError)
+        {
+            // Handle error messages
+            toastService.ShowError(e.Message);
+            logger.LogError($"FPService error: {e.Message}");
+            Console.WriteLine($"Error: {e.Message}");
+        }
+        else
+        {
+            // Handle success messages
+            toastService.ShowSuccess(e.Message);
+            logger.LogInformation($"FPService success: {e.Message}");
+            Console.WriteLine($"Success: {e.Message}");
+        }
+    }
+    private void OnRegistationSuccess(object sender, FPRegisteredEventArgs e)
+    {
+        if (fpIndex == 1)
+        {
+            newUser.FingerPrint1 = e.FingerPrint;
+            newUser.FpId = e.Fid;
+            toastService.ShowSuccess($"Első ujjlenyomat regisztrálva: {e.FingerPrint.Substring(0,10)}");
+            fpIndex++;
+        }
+        else if (fpIndex == 2)
+        {
+            newUser.FingerPrint2 = e.FingerPrint;
+            toastService.ShowSuccess($"Második ujjlenyomat regisztrálva: {e.FingerPrint.Substring(0,10)}");
+            fpIndex++;
+        }
+        InvokeAsync(StateHasChanged);
+        fpService.SwitchIdentifyMode(true);
+        toastService.ShowSuccess("Azonosítás bekapcsolva.");
+    }
+    public void Dispose()
+    {
+        fpService.Close();
+        fpService.MessageChanged -= OnMessageChanged!;
+        fpService.FingerPrintRegistered -= OnRegistationSuccess!;
+    }
+    private void RegisterFingerprint()
+    {
+        if(fpIndex <= 2)
+        {
+            fpService.SwitchIdentifyMode(false);
+            toastService.ShowSuccess("Regisztráció mód bekapcsolva.");
+            fpService.NewFingerprint(fpIndex);
+            message = "Kérem érintse meg az ujjlenyomat olvasót!";
+        }
+    }
+    private void SaveUser()
+    {
+        if(string.IsNullOrWhiteSpace(newUser.FingerPrint1))
+        {
+            toastService.ShowError("Kérem regisztrálja az első ujjlenyomatot!");
+            return;
+        }
+        userService.UpdateUser(newUser);
+        toastService.ShowSuccess("Felhasználó sikeresen frissítve!");
+        Task.Delay(2000).ContinueWith(_ => navigationManager.NavigateTo("/"));
+    }
+    private void HandleValidSubmit(EditContext args)
+    {
+        var user = args.Model as User;
+        if (user != null)
+        {
+            userService.UpdateUser(user);
+            toastService.ShowSuccess("Felhasználó sikeresen frissítve!");
+            Task.Delay(2000).ContinueWith(_ => navigationManager.NavigateTo("/"));
+        }
+    }
+    
+}

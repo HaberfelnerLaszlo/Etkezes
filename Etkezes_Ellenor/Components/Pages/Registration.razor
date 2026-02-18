@@ -1,8 +1,116 @@
-﻿@page "/regfp"
+﻿@page "/reg"
+@using System.Security.Cryptography
+@using System.Text
+@inject FPService fpService
+@inject LoginUserService loginService
+@inject IToastService toastService
+@inject NavigationManager navigationManager
+@implements IDisposable
+<FluentStack Orientation="Orientation.Horizontal">
+    <h3>Új Felhasználó Regisztrációja</h3>
+    <FluentSpacer />
+    @if (fpService.DeviceConnected())
+    {
+        <FluentIcon Value="@(new Icons.Filled.Size20.DeviceMeetingRoom())" Color="Color.Neutral" />
+    }
+    else
+    {
+        <FluentIcon Value="@(new Icons.Regular.Size20.DeviceMeetingRoomRemote())" Color="Color.Disabled" />
+    }
+</FluentStack>
 
-<h3>Registration</h3>
+<FluentEditForm Model="@newUser" OnValidSubmit="HandleValidSubmit">
+    <FluentStack Orientation="Orientation.Vertical" Gap="10px">
+        <FluentTextField @bind-Value="newUser.Name" Label="Név" Required="true" />
+        <FluentSelect TOption="string" @bind-Value="newUser.Role" Label="Szerepkör" Required="true">
+            <FluentOption Value="User" Title="Felhasználó" Selected="true">Felhasználó</FluentOption>
+            <FluentOption Value="Admin" Title="Adminisztrátor">Adminisztrátor</FluentOption>
+        </FluentSelect> 
+        <FluentTextField @bind-Value="newUser.UserName" Label="Felhasználónév" Required="true" TextFieldType="TextFieldType.Text" />
+        <FluentTextField @bind-Value="password" Label="Jelszó" Required="true" TextFieldType="TextFieldType.Password" />
+        <FluentButton Appearance="Appearance.Accent" Type="ButtonType.Submit">Regisztráció</FluentButton>
+    </FluentStack>
+</FluentEditForm>
+@if (fpIndex <= 2)
+{
+    <FluentButton Appearance="Appearance.Neutral" OnClick="() => fpService.NewFingerprint(fpIndex)">@fpIndex . Ujjlenyomat Regisztráció</FluentButton>
+}
 
 @code {
-    private User newUser = new User();
+    private LoginUser newUser = new LoginUser();
+    int fpIndex = 1;
+    string password = string.Empty;
+    protected override async Task OnInitializedAsync()
+    {
+        fpService.MessageChanged += OnMessageChanged!;
+        fpService.FingerPrintRegistered += OnRegistationSuccess!;
 
-}
+    }
+    private void OnMessageChanged(object sender, FPMessageChangedEventArgs e)
+    {
+        if (e.IsError)
+        {
+            // Handle error messages
+            toastService.ShowError(e.Message);
+            Console.WriteLine($"Error: {e.Message}");
+        }
+        else
+        {
+            // Handle success messages
+            toastService.ShowSuccess(e.Message);
+            Console.WriteLine($"Success: {e.Message}");
+        }
+    }
+    private void OnRegistationSuccess(object sender, FPRegisteredEventArgs e)
+    {
+        if (fpIndex == 1)
+        {
+            newUser.FingerPrint1 = e.FingerPrint;
+            newUser.FpId = e.Fid;
+            toastService.ShowSuccess($"Első ujjlenyomat regisztrálva: {e.FingerPrint.Skip(10).ToString()}");
+            fpIndex++;
+            InvokeAsync(StateHasChanged);
+        }
+        else if (fpIndex == 2)
+        {
+            newUser.FingerPrint2 = e.FingerPrint;
+            toastService.ShowSuccess($"Második ujjlenyomat regisztrálva: {e.FingerPrint.Skip(10).ToString()}");
+            fpIndex++;
+            InvokeAsync(StateHasChanged);
+        }
+    }
+    public void Dispose()
+    {
+        //fpService.Close();
+        fpService.MessageChanged -= OnMessageChanged!;
+        fpService.FingerPrintRegistered -= OnRegistationSuccess!;
+    }
+
+    private void HandleValidSubmit(EditContext args)
+    {
+        if(loginService.Exists(newUser.UserName))
+        {
+            toastService.ShowError("Ez a felhasználónév már létezik. Kérem válasszon másikat.");
+            return;
+        }
+        if(string.IsNullOrWhiteSpace(password) || password.Length < 4)
+        {
+            toastService.ShowError("A jelszónak legalább 4 karakter hosszúnak kell lennie.");
+            return;
+        }
+        if(string.IsNullOrWhiteSpace(newUser.FingerPrint1))
+        {
+            toastService.ShowError("Kérem regisztrálja az ujjlenyomatot.");
+            return;
+        }
+        if(loginService.AddUser(newUser, password))
+        {
+            toastService.ShowSuccess("Sikeres felhasználó regisztráció!");
+            navigationManager.NavigateTo("/");
+        }
+        else
+        {
+            toastService.ShowError("Hiba történt a regisztráció során.");
+        }
+    }
+ }

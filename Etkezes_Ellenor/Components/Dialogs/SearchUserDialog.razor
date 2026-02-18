@@ -1,0 +1,76 @@
+﻿@implements IDialogContentComponent<User>
+@inject UserService userService
+
+<FluentDialogHeader>
+    <h3>Felhasználó keresése</h3>
+</FluentDialogHeader>
+<FluentDialogBody>
+
+    <FluentSelect TOption="string" Label="Osztály" Required="true" Items="osztalyok" OptionValue="@(o => o)" OptionText="@(o => o + " osztály")" Placeholder="Válassza ki a keresett osztályt" SelectedOptionChanged="SelectedOsztaly" Height="100px"/>
+    @if (!string.IsNullOrWhiteSpace(osztaly))
+    {
+        <FluentDataGrid Items="@users.AsQueryable()" TGridItem="User" >
+            <SelectColumn TGridItem="User"
+                          SelectMode="DataGridSelectMode.SingleSticky" 
+                          SelectFromEntireRow="true"
+                          @bind-SelectedItems="@selectedUsers"
+                          @bind-SelectedItems:after="@(() => OnSelectedUserChanged())"/>
+            <PropertyColumn Property="u => u.Name" Title="Név" />
+            <PropertyColumn Property="u => u.Osztaly" Title="Osztály" />
+            <PropertyColumn Property="u => u.Etkezik" Title="Étkezik?" />
+            <PropertyColumn Property="u => u.FpId" Title="Id" />
+        </FluentDataGrid>
+    }
+    else if(users.Count() == 0)
+    {
+        <p>Nincs elmentett felhasználó, akinek nincs ujjlenyomata.</p>
+    }
+</FluentDialogBody>
+
+    <FluentDialogFooter>
+        <FluentButton Appearance="Appearance.Accent" OnClick="@SaveAsync" Disabled="@(Content == null)"> Kiválasztva </FluentButton>
+        <FluentButton Appearance="Appearance.Neutral" OnClick="@CancelAsync"> Mégse </FluentButton>
+    </FluentDialogFooter>
+
+@code {
+    [Parameter]
+    public User Content { get; set; } = default!;
+    [CascadingParameter]
+    public FluentDialog Dialog { get; set; } = default!;
+    IEnumerable<User> selectedUsers = new List<User>();
+    private string osztaly = string.Empty;
+    private User selectedUser = default!;
+    private List<User> users = new List<User>();
+    IList<string> osztalyok = new List<string> { "5.a", "5.b", "5.c", "6.a", "6.b", "6.c", "7.a", "7.b", "7.c", "8.a", "8.b", "8.c", "9.a", "9.b", "10.a", "10.b", "11.a", "11.b", "12.a", "12.b", };
+
+    private void SelectedOsztaly(string selectedOsztaly)
+    {
+        osztaly = selectedOsztaly;
+        users = userService.GetUsersByClass_NoFP(selectedOsztaly);
+        StateHasChanged();
+    }
+    private void OnSelectedUserChanged()
+    {
+        var selectedUser = selectedUsers.First();
+        if (selectedUser != null)
+        {
+            Content = selectedUser;
+        }
+    }
+    private void OnSelectedUserChanged_2(User user, bool isSelected)
+    {
+        if (isSelected)
+        {
+            Content = user;
+        }
+    }   
+    private async Task SaveAsync()
+    {
+        await Dialog.CloseAsync(Content);
+    }
+
+    private async Task CancelAsync()
+    {
+        await Dialog.CancelAsync();
+    }
+}
