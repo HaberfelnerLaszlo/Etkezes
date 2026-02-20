@@ -1,6 +1,13 @@
 <Solution>
+  <Folder Name="/Solution Items/">
+    <File Path="README.md" />
+  </Folder>
   <Project Path="Etkezes.AppHost/Etkezes.AppHost.csproj" />
   <Project Path="Etkezes.ServiceDefaults/Etkezes.ServiceDefaults.csproj" />
+  <Project Path="Etkezes_API/Etkezes_API.csproj" />
+  <Project Path="Etkezes_Components/Etkezes_Components.csproj" />
   <Project Path="Etkezes_Ellenor/Etkezes_Ellenor.csproj" />
+  <Project Path="Etkezes_Models/Etkezes_Models.csproj" Id="3de44e65-c9b2-4dd1-b33d-450e00db11c6" />
+  <Project Path="Etkezes_Nyilvantarto/Etkezes_Nyilvantarto.csproj" />
   <Project Path="FingerPrintServive/FingerPrintService.csproj" Id="99cbc044-1fae-435f-97ed-03f45cb22434" />
 </Solution>

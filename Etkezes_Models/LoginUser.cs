@@ -1,4 +1,4 @@
-﻿namespace Etkezes_Ellenor.Data
+﻿namespace Etkezes_Models
 {
     public class LoginUser
     {
@@ -10,5 +10,6 @@
         public string FingerPrint2 { get; set; } = string.Empty;
         public string UserName { get; set; } = string.Empty;
         public byte[] Password { get; set; } = [];
+        public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
     }
 }

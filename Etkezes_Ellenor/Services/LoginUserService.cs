@@ -1,5 +1,7 @@
 ﻿using Etkezes_Ellenor.Data;
 
+using Etkezes_Models;
+
 using System.Security.Cryptography;
 
 namespace Etkezes_Ellenor.Services

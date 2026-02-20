@@ -1,4 +1,4 @@
-﻿using Etkezes_Ellenor.Data;
+﻿using Etkezes_Models;
 
 using FingerPrintService;
 

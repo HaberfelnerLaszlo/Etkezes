@@ -19,7 +19,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Etkezes_API\Etkezes_API.csproj" />
     <ProjectReference Include="..\Etkezes_Ellenor\Etkezes_Ellenor.csproj" />
+    <ProjectReference Include="..\Etkezes_Nyilvantarto\Etkezes_Nyilvantarto.csproj" />
   </ItemGroup>
 
 </Project>

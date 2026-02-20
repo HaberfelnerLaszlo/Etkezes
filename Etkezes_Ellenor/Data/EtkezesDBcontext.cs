@@ -1,4 +1,6 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Etkezes_Models;
+
+using Microsoft.EntityFrameworkCore;
 
 using System.Reflection.Metadata;
 

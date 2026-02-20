@@ -1,8 +1,6 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using System.ComponentModel.DataAnnotations;
 
-using System.ComponentModel.DataAnnotations;
-
-namespace Etkezes_Ellenor.Data
+namespace Etkezes_Models
 {
     public class User
     {
