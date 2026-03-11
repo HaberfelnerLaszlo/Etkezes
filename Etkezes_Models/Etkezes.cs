@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace Etkezes_API.Data
+namespace Etkezes_Models
 {
     public class Etkezes
     {
@@ -32,6 +32,11 @@ namespace Etkezes_API.Data
         /// Étkezés darabszáma egy napon belül, amelyet a felhasználó elfogyaszt.
         /// </summary>
         public int Darab { get; set; }   =1;
-        public DateTime Updated { get; set; } = DateTime.Now;
+        /// <summary>
+        /// Megtörtént az étel elfogyasztása vagy sem.
+        /// </summary>
+        public bool Elfogyasztva { get; set; } = false;
+        public DateTime Updated { get; set; } = DateTime.UtcNow;
+        public User User { get; set; }  = new User();
    }
 }

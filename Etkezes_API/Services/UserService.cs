@@ -2,6 +2,8 @@
 
 using Etkezes_Models;
 
+using Microsoft.EntityFrameworkCore;
+
 namespace Etkezes_API.Services
 {
     public class UserService
@@ -13,24 +15,28 @@ namespace Etkezes_API.Services
 
         private readonly EtkezesDbContext _context;
         public string ErrorMessage { get; private set; } = string.Empty;
-        public List<string> GetAllUsers()
+        public async Task<List<string>> GetAllUsersAsync()
         {
-            return _context.Users.Select(u => u.Name).ToList();
+            return await _context.Users.Select(u => u.Name).AsNoTracking().ToListAsync();
         }
-        public User GetUserById(long id)
+        public async Task<User?> GetUserByIdAsync(long id)
         {
-            return _context.Users.FirstOrDefault(u => u.Id == id) ?? new User();
+            return await _context.Users.FindAsync(id);
         }
-        public List<User> GetUsersByUpDate(DateTime date)
+        public async Task<List<User>> GetUsersByUpDateAsync(DateTime date)
         {
-            return _context.Users.Where(u => u.Updated > date).ToList();
+            return await _context.Users.Where(u => u.Updated > date).AsNoTracking().ToListAsync();
         }
-        public bool CreateUser(User user)
+        public async Task<List<User>> GetUsersByOsztalyAsync(string osztaly)
+        {
+            return await _context.Users.Where(u=>u.Osztaly==osztaly).AsNoTracking().ToListAsync();
+        }
+        public async Task<bool> CreateUserAsync(User user)
         {
             try
             {
                 _context.Users.Add(user);
-                _context.SaveChanges();
+                await _context.SaveChangesAsync();
                 return true;
             }
             catch (Exception ex)
@@ -40,11 +46,11 @@ namespace Etkezes_API.Services
                 return false;
             }
         }
-        public bool UpdateUser(long id, User user)
+        public async Task<bool> UpdateUserAsync(long id, User user)
         {
             try
             {
-                var existingUser = _context.Users.FirstOrDefault(u => u.Id == id);
+                var existingUser = await _context.Users.FindAsync(id);
                 if (existingUser == null)
                 {
                     ErrorMessage = "User not found.";
@@ -58,7 +64,7 @@ namespace Etkezes_API.Services
                 existingUser.Etkezik = user.Etkezik;
                 existingUser.Updated = DateTime.Now;
                 existingUser.Uploaded = user.Uploaded;
-                _context.SaveChanges();
+                await _context.SaveChangesAsync();
                 return true;
             }
             catch (Exception ex)
@@ -68,25 +74,16 @@ namespace Etkezes_API.Services
                 return false;
             }
         }
-        public bool DeleteUser(long id)
+        public async Task DeleteUserAsync(long id)
         {
             try
             {
-                var user = _context.Users.FirstOrDefault(u => u.Id == id);
-                if (user == null)
-                {
-                    ErrorMessage = "User not found.";
-                    return false;
-                }
-                _context.Users.Remove(user);
-                _context.SaveChanges();
-                return true;
+                await _context.Users.Where(u => u.Id == id).ExecuteDeleteAsync();
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Error deleting user: {ex.Message}");
                 ErrorMessage = $"Error deleting user: {ex.Message}";
-                return false;
             }
         }
 

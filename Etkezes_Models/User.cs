@@ -10,7 +10,7 @@ namespace Etkezes_Models
         [StringLength(100, ErrorMessage = "A név mező maximum 100 karakter hosszú lehet.")]
         public string Name { get; set; } = string.Empty;
         [Range(0, int.MaxValue, ErrorMessage = "A FpId mezőnek pozitív egész számnak kell lennie.")]
-        public int FpId { get; set; }    = 0;
+        public int FpId { get; set; } = 0;
         public string FingerPrint1 { get; set; } = string.Empty;
         public string FingerPrint2 { get; set; } = string.Empty;
         /// <summary>
@@ -34,7 +34,7 @@ namespace Etkezes_Models
         /// <summary>
         /// Frissítve: Az az időpont, amikor a felhasználó adatai utoljára módosításra kerültek a rendszerben. Ez lehet manuális vagy automatikus frissítés eredménye is, és segít nyomon követni, hogy mikor történt az utolsó adatváltoztatás a felhasználóval kapcsolatban.
         /// </summary>
-        public DateTime Updated { get; set; }  = DateTime.Now;
-
+        public DateTime Updated { get; set; } = DateTime.UtcNow;
     }
+    
 }

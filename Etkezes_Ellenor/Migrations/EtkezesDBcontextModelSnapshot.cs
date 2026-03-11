@@ -34,10 +34,14 @@ namespace Etkezes_Ellenor.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
                     b.Property<DateTime>("Updated")
                         .HasColumnType("TEXT");
 
-                    b.Property<int>("UserId")
+                    b.Property<long>("UserId")
                         .HasColumnType("INTEGER");
 
                     b.HasKey("Id");
@@ -45,7 +49,7 @@ namespace Etkezes_Ellenor.Migrations
                     b.ToTable("Etkezesek");
                 });
 
-            modelBuilder.Entity("Etkezes_Ellenor.Data.LoginUser", b =>
+            modelBuilder.Entity("Etkezes_Models.LoginUser", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -74,6 +78,9 @@ namespace Etkezes_Ellenor.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("UserName")
                         .IsRequired()
                         .HasColumnType("TEXT");
@@ -83,7 +90,34 @@ namespace Etkezes_Ellenor.Migrations
                     b.ToTable("LoginUsers");
                 });
 
-            modelBuilder.Entity("Etkezes_Ellenor.Data.User", b =>
+            modelBuilder.Entity("Etkezes_Models.SyncData", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsSuccess")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("SyncDate")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Table")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("SyncDatas");
+                });
+
+            modelBuilder.Entity("Etkezes_Models.User", b =>
                 {
                     b.Property<long>("Id")
                         .HasColumnType("INTEGER");

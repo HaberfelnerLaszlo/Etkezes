@@ -7,9 +7,10 @@ public class EtkezesDbContext : DbContext
     public EtkezesDbContext(DbContextOptions<EtkezesDbContext> options)
         : base(options)
     { }
-    public DbSet<User> Users { get; set; }
-    public DbSet<LoginUser> LoginUsers { get; set; }
-    public DbSet<Etkezes> Etkezesek { get; set; }
+    public DbSet<User> Users =>Set<User>();
+    public DbSet<LoginUser> LoginUsers =>Set<LoginUser>();
+    public DbSet<Etkezes> Etkezesek => Set<Etkezes>();
+    public DbSet<SyncData> SyncDatas =>Set<SyncData>();
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<User>()

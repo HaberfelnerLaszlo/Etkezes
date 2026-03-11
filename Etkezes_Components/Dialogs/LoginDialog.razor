@@ -1,0 +1,39 @@
+﻿@implements IDialogContentComponent<LoginData>
+@inject IToastService toastService
+<FluentDialogHeader>
+    <h4>Belépés az oldalra</h4>
+</FluentDialogHeader>
+<FluentDialogBody>
+    <FluentStack Orientation="Orientation.Vertical" VerticalAlignment="VerticalAlignment.Center" VerticalGap="20">
+        <FluentLabel>Felhasználónév</FluentLabel>
+        <FluentTextField Placeholder="Felhasználónév" Value="@Content.UserName"/>
+        <FluentTextField TextFieldType="TextFieldType.Password" Placeholder="Jelszó" Value="@Content.Password"/>
+    </FluentStack>
+</FluentDialogBody>
+<FluentDialogFooter>
+    <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="10">
+        <FluentButton OnClick="() => LoginButton()">Belépés</FluentButton>
+        <FluentButton OnClick="() => Dialog.CancelAsync()">Mégsem</FluentButton>
+    </FluentStack>
+</FluentDialogFooter>
+@code{
+    [Parameter]
+    public LoginData Content { get; set; } = default!;
+    [CascadingParameter]
+    public FluentDialog Dialog { get; set; } = default!;
+
+    private void LoginButton()
+    {
+        if (String.IsNullOrWhiteSpace(Content.UserName))
+        {
+            toastService.ShowWarning("A felhasználó név nem lehet üres!");
+            return;
+        }
+        if (String.IsNullOrWhiteSpace(Content.Password))
+        {
+            toastService.ShowWarning("A jelszó nem lehet üres!");
+            return;
+        }
+        Dialog.CloseAsync(Content);
+    }
+}

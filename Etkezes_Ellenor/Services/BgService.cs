@@ -6,17 +6,21 @@ namespace Etkezes_Ellenor.Services
 {
     public class BgService : IHostedLifecycleService ,IDisposable
     {
-        private readonly FPService _fpService;
+        private readonly IFPService _fpService;
+        private readonly SyncService _syncService;
         private readonly ILogger<BgService> _logger;
 
-        public BgService(FPService fpService, ILogger<BgService> logger)
+        public BgService(IFPService fpService,SyncService syncService, ILogger<BgService> logger)
         {
             _fpService = fpService;
+            _syncService = syncService;
             _logger = logger;
         }
-        public Task StartAsync(CancellationToken cancellationToken)
+        public async Task StartAsync(CancellationToken cancellationToken)
         {
-            return Task.CompletedTask;
+          //  if(await _syncService.GetSyncDates()) {_logger.LogInformation("Adatbázis szinkronizálás."); }
+            //else { _logger.LogInformation("Adatbázis szinkronizálás sikertelen."); }
+            await Task.CompletedTask;
         }
 
         public Task StartedAsync(CancellationToken cancellationToken)
@@ -28,7 +32,8 @@ namespace Etkezes_Ellenor.Services
 
         public Task StartingAsync(CancellationToken cancellationToken)
         {
-            _fpService.Open();
+            //_fpService.Open();
+            _fpService.DeviceInit();
             _logger.LogInformation("Fingerprint service started.");
             return Task.CompletedTask;
         }

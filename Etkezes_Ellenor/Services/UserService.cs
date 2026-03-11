@@ -10,8 +10,8 @@ namespace Etkezes_Ellenor.Services
     {
         private readonly EtkezesDBcontext _context;
         private readonly ILogger<UserService> _logger;
-        private readonly FPService _fpService;
-        public UserService(EtkezesDBcontext context, ILogger<UserService> logger, FPService fpService)
+        private readonly IFPService _fpService;
+        public UserService(EtkezesDBcontext context, ILogger<UserService> logger, IFPService fpService)
         {
             _context = context;
             _logger = logger;
@@ -88,7 +88,7 @@ namespace Etkezes_Ellenor.Services
                 _logger.LogError(ex, "Error deleting user");
             }
         }
-        public bool UserLoading()
+        public async Task<bool> UserLoading()
         {
             try
             {
@@ -103,7 +103,7 @@ namespace Etkezes_Ellenor.Services
                 {
                     if (!string.IsNullOrWhiteSpace(item.FingerPrint1))
                     {
-                        if(_fpService.AddFingerprint(item.FingerPrint1,item.FpId))
+                        if(await _fpService.AddFingerprintAsync(item.FingerPrint1,item.FpId))
                         {
                             Console.WriteLine($"User {item.Name} loaded successfully.");
                         }

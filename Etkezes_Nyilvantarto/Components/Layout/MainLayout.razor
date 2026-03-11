@@ -1,9 +1,59 @@
 ﻿@inherits LayoutComponentBase
-
-@Body
-
+@inject DataService dataService
+@inject IDialogService dialogService
+@inject IToastService toastService
+ @* <FluentLayout> *@
+    <FluentHeader>
+        <FluentLabel>Etkezés nyilvántartó</FluentLabel>
+        <FluentSpacer/>
+        @if (dataService.actualUser != null)
+        {
+            <FluentLabel>@dataService.actualUser.Name</FluentLabel>
+        }
+        else
+        {
+            <FluentButton OnClick="LoginPage">Belépés</FluentButton>
+        }
+    </FluentHeader>
+        @Body
+    <FluentFooter Style="position:absolute; bottom:30px;width:auto">
+        <span>V:0.1.0</span>
+    <span>2026.02.21</span>
+    </FluentFooter>
+    <FluentToastProvider Position="ToastPosition.BottomRight"/>
+    <FluentDialogProvider/>
+@* </FluentLayout> *@
 <div id="blazor-error-ui" data-nosnippet>
     An unhandled error has occurred.
     <a href="." class="reload">Reload</a>
     <span class="dismiss">🗙</span>
 </div>
+@code{
+    private async void LoginPage()
+    {
+        LoginData? loginData = new();
+        DialogParameters parameters = new()
+        {
+            // Title = $"Hello {simplePerson.Firstname}",
+            // TitleTypo = Typography.H2,
+            // PrimaryAction = "Yes",
+            // PrimaryActionEnabled = true,
+            // SecondaryAction = "No",
+            Width = "500px",
+            Modal = true,
+            PreventScroll = true
+        };
+
+        IDialogReference dialog = await dialogService.ShowDialogAsync<LoginDialog>(loginData, parameters);
+        DialogResult? result = await dialog.Result;
+
+        if (result.Data is not null)
+        {
+             loginData= result.Data as LoginData;
+        }
+        else
+        {
+            toastService.ShowInfo($"Dialog closed - Canceled: {result.Cancelled}");
+        }
+    }
+}

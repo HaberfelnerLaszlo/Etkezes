@@ -1,5 +1,5 @@
 ﻿@page "/fpreg"
-@inject FPService fpService
+@inject IFPService fpService
 @inject UserService userService
 @inject DataService dataService
 @inject NavigationManager navigationManager
@@ -109,13 +109,13 @@ else
         fpService.MessageChanged -= OnMessageChanged!;
         fpService.FingerPrintRegistered -= OnRegistationSuccess!;
     }
-    private void RegisterFingerprint()
+    private async Task RegisterFingerprint()
     {
         if(fpIndex <= 2)
         {
             fpService.SwitchIdentifyMode(false);
             toastService.ShowSuccess("Regisztráció mód bekapcsolva.");
-            fpService.NewFingerprint(fpIndex);
+            await fpService.NewFingerprintAsync(fpIndex);
             message = "Kérem érintse meg az ujjlenyomat olvasót!";
         }
     }

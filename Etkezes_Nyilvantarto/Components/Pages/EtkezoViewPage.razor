@@ -1,0 +1,60 @@
+﻿@page "/etkezoview"
+@inject IDialogService dialogService
+@inject IToastService toastService
+@inject EtkezesService etkezesService
+@implements IDisposable
+<h3>EtkezoPage</h3>
+<SelectOsztaly OnSelectOsztaly="SelectOsztaly"/>
+<FluentDatePicker Value="date" ValueChanged="OnDateChanged" />
+@if (IsselectedOsztaly)
+{
+    <EtkezesViewTable Etkezesek="etkezesek" Delete="DeleteEtkezes" Update="UpdateEtkezes" />
+}
+@code {
+    List<EtkezesView> etkezesek = new List<EtkezesView>();
+    DateTime date = DateTime.Now;
+    bool IsselectedOsztaly = false;
+    protected override void OnInitialized()
+    {
+        etkezesService.OnMessage += OnMessageChange!;
+        base.OnInitialized();
+    }
+    private async Task SelectOsztaly(string osztaly)
+    {
+        // Handle the selected class here
+        etkezesek = await etkezesService.GetEtkezesekByDateByOsztaly(date, osztaly);
+        if (etkezesek.Count == 0)
+        {
+            toastService.ShowInfo("Nincs rendelés az osztálynak!");
+        }
+        else
+        {
+            IsselectedOsztaly = true;
+        }
+        StateHasChanged();
+    }
+    private void OnMessageChange(object sender, OnMessageEtkezesEventArgs e)
+    {
+        // Handle the message change event here
+        toastService.ShowError(e.Message);
+    }
+    private async Task DeleteEtkezes(int id)
+    {
+        await etkezesService.DeleteEtkezes(id);
+        await Task.CompletedTask;
+    }
+    private async Task UpdateEtkezes(Etkezes args)
+    {
+        await etkezesService.UpdateEtkezes(args);
+        await Task.CompletedTask;
+    }
+    public void Dispose()
+    {
+        etkezesService.OnMessage -= OnMessageChange!;
+    }
+    private void OnDateChanged(DateTime? args)
+    {
+        date = args ?? DateTime.Now;
+        StateHasChanged();
+    }
+}

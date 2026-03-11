@@ -19,7 +19,7 @@ namespace Etkezes_API.Migrations
                 .HasAnnotation("ProductVersion", "10.0.3")
                 .HasAnnotation("Relational:MaxIdentifierLength", 64);
 
-            modelBuilder.Entity("Etkezes_API.Data.Etkezes", b =>
+            modelBuilder.Entity("Etkezes_Models.Etkezes", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -35,6 +35,9 @@ namespace Etkezes_API.Migrations
                     b.Property<DateTime>("Datum")
                         .HasColumnType("datetime(6)");
 
+                    b.Property<bool>("Elfogyasztva")
+                        .HasColumnType("tinyint(1)");
+
                     b.Property<string>("Menu")
                         .IsRequired()
                         .HasColumnType("longtext");
@@ -46,6 +49,8 @@ namespace Etkezes_API.Migrations
                         .HasColumnType("bigint");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("UserId");
 
                     b.ToTable("Etkezesek");
                 });
@@ -79,6 +84,9 @@ namespace Etkezes_API.Migrations
                         .IsRequired()
                         .HasColumnType("longtext");
 
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
                     b.Property<string>("UserName")
                         .IsRequired()
                         .HasColumnType("longtext");
@@ -86,6 +94,33 @@ namespace Etkezes_API.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("LoginUsers");
+                });
+
+            modelBuilder.Entity("Etkezes_Models.SyncData", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("longtext");
+
+                    b.Property<bool>("IsSuccess")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<DateTime>("SyncDate")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("Table")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("SyncDatas");
                 });
 
             modelBuilder.Entity("Etkezes_Models.User", b =>
@@ -129,6 +164,17 @@ namespace Etkezes_API.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Users");
+                });
+
+            modelBuilder.Entity("Etkezes_Models.Etkezes", b =>
+                {
+                    b.HasOne("Etkezes_Models.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
                 });
 #pragma warning restore 612, 618
         }

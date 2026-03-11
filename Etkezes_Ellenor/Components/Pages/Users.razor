@@ -1,5 +1,7 @@
 ﻿@page "/users"
 @inject UserService userService
+@inject ILogger<Users> logger
+@inject IToastService toastService
 <h3>Felhasználók</h3>
 <FluentDataGrid Items="@users">
     <PropertyColumn Property="u=>u.Name" Title="Név" />
@@ -22,10 +24,12 @@
     }
     private void EditUser(User user)
     {
+        toastService.ShowInfo($"Szerkesztés: {user.Name}");
         // Implement edit functionality
     }
     private void DeleteUser(User user)
     {
+        toastService.ShowWarning($"Törlés: {user.Name}");
         // Implement delete functionality
     }
 }

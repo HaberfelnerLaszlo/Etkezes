@@ -1,13 +1,17 @@
 ﻿using libzkfpcsharp;
 using Microsoft.Extensions.Logging;
 
+using SourceAFIS;
+
 using System.Drawing;
 using System.IO;
 using System.Security.Cryptography;
 using System.Text.RegularExpressions;
+
+using ZkTecoFingerPrint;
 namespace FingerPrintService
 {
-    public class FPService:IDisposable
+    public class FPService : IDisposable, IFPService
     {
         IntPtr mDevHandle = IntPtr.Zero;
         IntPtr mDBHandle = IntPtr.Zero;
@@ -33,7 +37,7 @@ namespace FingerPrintService
 
         private int mfpWidth = 0;
         private int mfpHeight = 0;
-        public event EventHandler<FPMessageChangedEventArgs>? MessageChanged;      
+        public event EventHandler<FPMessageChangedEventArgs>? MessageChanged;
         public event EventHandler<FPRegisteredEventArgs>? FingerPrintRegistered;
         public event EventHandler<FPSuccessIdentificationEventArgs>? SuccessIdentification;
         public FPService(ILogger<FPService> logger)
@@ -49,25 +53,30 @@ namespace FingerPrintService
         public bool DeviceInit()
         {
             int ret = zkfperrdef.ZKFP_ERR_OK;
-            if ((ret = zkfp2.Init()) == zkfperrdef.ZKFP_ERR_OK)
+//            if ((ret = zkfp2.Init()) == zkfperrdef.ZKFP_ERR_OK)
+            if ((ret = ZkfpLinux.ZKFPM_Init()) == zkfperrdef.ZKFP_ERR_OK)
             {
-                devCount = zkfp2.GetDeviceCount();
+                //devCount = zkfp2.GetDeviceCount();
+                devCount = ZkfpLinux.ZKFPM_GetDeviceCount();
                 if (devCount > 0)
                 {
+                _logger.LogInformation("Number of devices connected: {DevCount}", devCount);
                     if (devCount > 1)
                     {
                         ErrorInfo = devCount + " darab eszköz csatlakoztatva!";
                         MessageChanged?.Invoke(this, new FPMessageChangedEventArgs(ErrorInfo, true));
                         return false;
                     }
-                    SuccessInfo = "Eszköz csatlakoztatva, kész a használatra!";
+                    SuccessInfo = "Eszköz csatlakoztatva, kész a használatra!";  
+                    _logger.LogInformation(SuccessInfo);
                     MessageChanged?.Invoke(this, new FPMessageChangedEventArgs(SuccessInfo, false, DEVICE_OPEN));
                 }
             }
             else
             {
-                zkfp2.Terminate();
-                ErrorInfo = "Nincs csatlakoztatott eszköz!";
+                ZkfpLinux.ZKFPM_Terminate();
+                ErrorInfo = $"Nincs csatlakoztatott eszköz! devCount: {devCount}";
+                _logger.LogError(ErrorInfo);
                 MessageChanged?.Invoke(this, new FPMessageChangedEventArgs(ErrorInfo, true));
                 return false;
             }
@@ -82,14 +91,16 @@ namespace FingerPrintService
         {
             if (mDevHandle != IntPtr.Zero)
             {
-                zkfp2.CloseDevice(mDevHandle);
+                _logger.LogInformation("Destructor called, closing device handle...");
+                ZkfpLinux.ZKFPM_CloseDevice(mDevHandle);
                 mDevHandle = IntPtr.Zero;
             }
         }
-        public void Open()
+        public async Task Open()
         {
             if (devCount < 1)
             {
+                _logger.LogWarning("No devices connected, attempting to reinitialize...");
                 bool flowControl = DeviceInit();
                 if (!flowControl)
                 {
@@ -98,17 +109,20 @@ namespace FingerPrintService
             }
 
             int ret = zkfp.ZKFP_ERR_OK;
-            if (IntPtr.Zero == (mDevHandle = zkfp2.OpenDevice(0)))
+ //           if (IntPtr.Zero == (mDevHandle = zkfp2.OpenDevice(0)))
+            if (IntPtr.Zero == (mDevHandle = ZkfpLinux.ZKFPM_OpenDevice(0)))
             {
                 ErrorInfo = "Eszköz megnyitása sikertelen!";
+                _logger?.LogError(ErrorInfo+mDevHandle.ToString());
                 MessageChanged?.Invoke(this, new FPMessageChangedEventArgs(ErrorInfo, true));
                 return;
             }
-            if (IntPtr.Zero == (mDBHandle = zkfp2.DBInit()))
+            if (IntPtr.Zero == (mDBHandle = ZkfpLinux.ZKFPM_DBInit()))
             {
-                ErrorInfo = "DB inicializálása sikertelen!";
+                ErrorInfo = "DB inicializálása sikertelen!"; 
+                _logger?.LogError(ErrorInfo);
                 MessageChanged?.Invoke(this, new FPMessageChangedEventArgs(ErrorInfo, true));
-                zkfp2.CloseDevice(mDevHandle);
+                ZkfpLinux.ZKFPM_CloseDevice(mDevHandle);
                 mDevHandle = IntPtr.Zero;
                 return;
             }
@@ -121,12 +135,12 @@ namespace FingerPrintService
             }
             byte[] paramValue = new byte[4];
             int size = 4;
-            zkfp2.GetParameters(mDevHandle, 1, paramValue, ref size);
-            zkfp2.ByteArray2Int(paramValue, ref mfpWidth);
+            ZkfpLinux.ZKFPM_GetParameters(mDevHandle, 1, paramValue, ref size);
+            ZkfpLinux.ZKFPM_ByteArray2Int(paramValue, ref mfpWidth);
 
             size = 4;
-            zkfp2.GetParameters(mDevHandle, 2, paramValue, ref size);
-            zkfp2.ByteArray2Int(paramValue, ref mfpHeight);
+            ZkfpLinux.ZKFPM_GetParameters(mDevHandle, 2, paramValue, ref size);
+            ZkfpLinux.ZKFPM_ByteArray2Int(paramValue, ref mfpHeight);
 
             FPBuffer = new byte[mfpWidth * mfpHeight];
 
@@ -141,7 +155,7 @@ namespace FingerPrintService
             while (!bIsTimeToDie)
             {
                 cbCapTmp = 2048;
-                int ret = zkfp2.AcquireFingerprint(mDevHandle, FPBuffer, CapTmp, ref cbCapTmp);
+                int ret = ZkfpLinux.ZKFPM_AcquireFingerprint(mDevHandle, FPBuffer, (uint)FPBuffer!.Length, CapTmp, ref cbCapTmp);
                 if (ret == zkfp.ZKFP_ERR_OK)
                 {
                     // Process the captured fingerprint data (FPBuffer) as needed
@@ -166,14 +180,15 @@ namespace FingerPrintService
                     //IsRegister = true;
                     return;
                 }
-                ret = zkfp2.DBIdentify(mDBHandle, CapTmp, ref fid, ref score);
+                ret = ZkfpLinux.ZKFPM_DBIdentify(mDBHandle, CapTmp, ref fid, ref score);
                 if (zkfp.ZKFP_ERR_OK == ret)
                 {
                     ErrorInfo = "Ujjlenyomat már regisztrálva van, fid= " + fid + "!";
                     MessageChanged?.Invoke(this, new FPMessageChangedEventArgs(ErrorInfo, true, ret));
                     return;
                 }
-                if (RegisterCount > 0 && zkfp2.DBMatch(mDBHandle, CapTmp, RegTmps[RegisterCount - 1]) <= 0)
+                //int APICALL ZKFPM_DBMatch (HANDLE hDBCache, unsigned char* fpTemplate1, unsigned int cbfpTemplate1, unsigned char* fpTemplate2, unsigned int cbfpTemplate2);
+                if (RegisterCount > 0 && ZkfpLinux.ZKFPM_DBMatch(mDBHandle, CapTmp, CapTmp.Length, RegTmps[RegisterCount - 1], RegTmps[RegisterCount - 1].Length, ref fid) <= 0)
                 {
                     SuccessInfo = "Kérem, érintse meg ugyanazt az ujjlenyomatot 3 alkalommal a regisztrációhoz";
                     MessageChanged?.Invoke(this, new FPMessageChangedEventArgs(SuccessInfo, false));
@@ -181,24 +196,24 @@ namespace FingerPrintService
                 }
 
                 Array.Copy(CapTmp, RegTmps[RegisterCount], cbCapTmp);
-                String strBase64 = zkfp2.BlobToBase64(CapTmp, cbCapTmp);
-                byte[] blob = zkfp2.Base64ToBlob(strBase64);
+                String strBase64 = Base64Converter.ToBase64(CapTmp, false, false);
+                byte[] blob = Base64Converter.ToBytes(strBase64).Bytes;
                 RegisterCount++;
                 if (RegisterCount >= REGISTER_FINGER_COUNT)
                 {
                     RegisterCount = 0;
-                    if (zkfp.ZKFP_ERR_OK == (ret = zkfp2.DBMerge(mDBHandle, RegTmps[0], RegTmps[1], RegTmps[2], RegTmp, ref cbRegTmp)) &&
-                           zkfp.ZKFP_ERR_OK == (ret = zkfp2.DBAdd(mDBHandle, iFid, RegTmp)))
+                    if (zkfp.ZKFP_ERR_OK == (ret = ZkfpLinux.ZKFPM_DBMerge(mDBHandle, RegTmps[0], RegTmps[1], RegTmps[2], RegTmp, ref cbRegTmp)) &&
+                           zkfp.ZKFP_ERR_OK == (ret = ZkfpLinux.ZKFPM_DBAdd(mDBHandle, iFid, RegTmp,RegTmp.Length)))
                     {
-                        string fingerTmpBase64 = zkfp2.BlobToBase64(RegTmp, cbRegTmp); 
-                        FingerPrintRegistered?.Invoke(this, new FPRegisteredEventArgs(iFid, fingerTmpBase64));
+                        string fingerTmpBase64 = Base64Converter.ToBase64(RegTmp, false, false);
+                        //FingerPrintRegistered?.Invoke(this, new FPRegisteredEventArgs(iFid, fingerTmpBase64));
                         SuccessInfo = "Sikeres regisztráció";
                         MessageChanged?.Invoke(this, new FPMessageChangedEventArgs(SuccessInfo, false));
                         iFid = (iFid >= 1000) ? iFid - 999 : iFid + 1;
                     }
                     else
                     {
-                        ErrorInfo = "Sikertelen regisztráció, hibakód=" + ret;                                    
+                        ErrorInfo = "Sikertelen regisztráció, hibakód=" + ret;
                         MessageChanged?.Invoke(this, new FPMessageChangedEventArgs(ErrorInfo, true, ret));
                     }
                     IsRegister = false;
@@ -219,10 +234,11 @@ namespace FingerPrintService
                 //    //IsRegister = true;
                 //    return;
                 //}
+                int fid = 0, score = 0;
                 if (bIdentify)
                 {
                     int ret = zkfp.ZKFP_ERR_OK;
-                    int fid = 0, score = 0;
+                     
                     ret = zkfp2.DBIdentify(mDBHandle, CapTmp, ref fid, ref score);
                     if (zkfp.ZKFP_ERR_OK == ret)
                     {
@@ -240,30 +256,31 @@ namespace FingerPrintService
                 }
                 else
                 {
-                    int ret = zkfp2.DBMatch(mDBHandle, CapTmp, RegTmp);
+                    int ret = ZkfpLinux.ZKFPM_DBMatch(mDBHandle, CapTmp, CapTmp.Length, RegTmp, RegTmp.Length,ref fid);
                     if (0 < ret)
                     {
-                        SuccessInfo = "Sikeres ujjlenyomat egyeztetés, score=" + ret + "!";                    
+                        SuccessInfo = "Sikeres ujjlenyomat egyeztetés, score=" + ret + "!";
                         MessageChanged?.Invoke(this, new FPMessageChangedEventArgs(SuccessInfo, false));
                         return;
                     }
                     else
                     {
-                        ErrorInfo = "Sikertelen ujjlenyomat egyeztetés, hibakód= " + ret;                         
+                        ErrorInfo = "Sikertelen ujjlenyomat egyeztetés, hibakód= " + ret;
                         MessageChanged?.Invoke(this, new FPMessageChangedEventArgs(ErrorInfo, true, ret));
                         return;
                     }
                 }
             }
         }
-        public void NewFingerprint(int index)
+        public async Task NewFingerprintAsync(int index)
         {
             if (index < 1 || index > 3)
             {
                 ErrorInfo = "Érvénytelen index, csak 1-3 között lehet!";
                 MessageChanged?.Invoke(this, new FPMessageChangedEventArgs(ErrorInfo, true, -1));
                 return;
-            } else if (index == 2)
+            }
+            else if (index == 2)
             {
                 iFid += 1000;
             }
@@ -271,7 +288,7 @@ namespace FingerPrintService
             cbRegTmp = 2048;
             if (mDevHandle == IntPtr.Zero)
             {
-                Open();
+                await Open();
             }
         }
         public bool ClearDb()
@@ -280,10 +297,10 @@ namespace FingerPrintService
             {
                 if (mDBHandle != IntPtr.Zero)
                 {
-                    zkfp2.DBFree(mDBHandle);
+                    ZkfpLinux.ZKFPM_DBFree(mDBHandle);
                     mDBHandle = IntPtr.Zero;
                 }
-                mDBHandle = zkfp2.DBInit();
+                mDBHandle = ZkfpLinux.ZKFPM_DBInit();
                 SuccessInfo = "Sikeres adatbázis törlés";
                 MessageChanged?.Invoke(this, new FPMessageChangedEventArgs(SuccessInfo, false));
                 return true;
@@ -295,17 +312,17 @@ namespace FingerPrintService
                 return false;
             }
         }
-        public bool AddFingerprint(string fingerPrintBase64, int fId)
+        public async Task<bool> AddFingerprintAsync(string fingerPrintBase64, int fId)
         {
             try
             {
-                 if(mDevHandle == IntPtr.Zero)
+                if (mDevHandle == IntPtr.Zero)
                 {
-                    Open();
+                    await Open();
                 }
-               byte[] blob = zkfp2.Base64ToBlob(fingerPrintBase64);
-                int fid=0,score=0;
-                int ret = zkfp2.DBIdentify(mDBHandle, blob, ref fid, ref score);
+                byte[] blob = Base64Converter.ToBytes(fingerPrintBase64).Bytes;
+                int fid = 0, score = 0;
+                int ret = ZkfpLinux.ZKFPM_DBIdentify(mDBHandle, blob, ref fid, ref score);
                 if (zkfp.ZKFP_ERR_OK == ret)
                 {
                     ErrorInfo = "Ujjlenyomat már regisztrálva van, fid= " + fid + "!";
@@ -313,10 +330,10 @@ namespace FingerPrintService
                     //MessageChanged?.Invoke(this, new FPMessageChangedEventArgs(ErrorInfo, true, ret));
                     return true;
                 }
-                ret = zkfp2.DBAdd(mDBHandle, fId, blob);
+                ret = ZkfpLinux.ZKFPM_DBAdd(mDBHandle, fId, blob, blob.Length);
                 if (ret == zkfp.ZKFP_ERR_OK)
                 {
-                    FingerPrintRegistered?.Invoke(this, new FPRegisteredEventArgs(fId, fingerPrintBase64));
+                    //FingerPrintRegistered?.Invoke(this, new FPRegisteredEventArgs(fId, fingerPrintBase64));
                     SuccessInfo = "Sikeres adatbázis regisztráció";
                     MessageChanged?.Invoke(this, new FPMessageChangedEventArgs(SuccessInfo, false, SUCCESS_DB_ADD));
                     //cbRegTmp = blob.Length;
@@ -342,7 +359,9 @@ namespace FingerPrintService
         }
         public bool DeviceConnected()
         {
+            _logger.LogInformation($"Checking device connection status... Device handle: {mDevHandle}");
             return mDevHandle != IntPtr.Zero;
+
         }
         public void SwitchIdentifyMode(bool identify)
         {
@@ -357,16 +376,21 @@ namespace FingerPrintService
             }
             if (mDBHandle != IntPtr.Zero)
             {
-                zkfp2.DBFree(mDBHandle);
+                ZkfpLinux.ZKFPM_DBFree(mDBHandle);
                 mDBHandle = IntPtr.Zero;
             }
             if (mDevHandle != IntPtr.Zero)
             {
-                zkfp2.CloseDevice(mDevHandle);
+                ZkfpLinux.ZKFPM_CloseDevice(mDevHandle);
                 mDevHandle = IntPtr.Zero;
             }
         }
         public void Dispose() => Close();
+
+        public bool MatchFingerprint(ZkFingerPrintResult fingerprintResult, List<UserFp> users)
+        {
+            throw new NotImplementedException();
+        }
     }
     public class FPMessageChangedEventArgs : EventArgs
     {
@@ -384,10 +408,12 @@ namespace FingerPrintService
     {
         public int Fid { get; private set; } 
         public string FingerPrint { get; private set; }
-        public FPRegisteredEventArgs(int fid, string fingerPrint)
+        public ZkFingerPrintResult Result { get; private set; }
+        public FPRegisteredEventArgs(int fid, string fingerPrint, ZkFingerPrintResult result)
         {
             Fid = fid;
             FingerPrint = fingerPrint;
+            Result = result;
         }
     }
     public class FPSuccessIdentificationEventArgs : EventArgs

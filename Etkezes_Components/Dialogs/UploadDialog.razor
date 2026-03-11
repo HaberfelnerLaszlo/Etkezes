@@ -1,0 +1,56 @@
+﻿@implements IDialogContentComponent<MemoryStream>
+@inject IToastService toastService
+<FluentInputFile @ref="@myFileByStream"
+                 AnchorId="MyUploadStream"
+                 DragDropZoneVisible="false"
+                 Mode="InputFileMode.Stream"
+                 Multiple="false"
+                 MaximumFileSize="@(20 * 1024 * 1024)"
+                 Accept=".csv, .xls, .xlsx"
+                 OnFileUploaded="@OnFileUploadedAsync"
+                 OnCompleted="@OnCompleted" />
+
+<FluentProgress Min="0" Max="100" Value="@progressPercent" Visible="@(progressPercent > 0)" />
+<FluentLabel Alignment="HorizontalAlignment.Center">
+    @progressTitle
+</FluentLabel>
+
+<FluentButton Appearance="Appearance.Accent" Id="MyUploadStream">
+    Upload files
+</FluentButton>
+
+@code
+{
+    [Parameter]
+    public MemoryStream Content { get; set; } = default!;
+    [CascadingParameter]
+    public FluentDialog Dialog { get; set; } = default!;
+    FluentInputFile? myFileByStream = default!;
+    int? progressPercent;
+    string? progressTitle;
+
+    List<string> Files = new();
+
+    async Task OnFileUploadedAsync(FluentInputFileEventArgs file)
+    {
+        
+        progressPercent = file.ProgressPercent;
+        progressTitle = file.ProgressTitle;
+
+        var localFile = Path.GetTempFileName() + file.Name;
+        Files.Add(localFile);
+        
+        // Write to the FileStream
+        // See other samples: https://docs.microsoft.com/en-us/aspnet/core/blazor/file-uploads
+        await file.Stream!.CopyToAsync(Content);
+        await file.Stream!.DisposeAsync();
+    }
+
+    void OnCompleted(IEnumerable<FluentInputFileEventArgs> files)
+    {
+        progressPercent = myFileByStream!.ProgressPercent;
+        progressTitle = myFileByStream!.ProgressTitle;
+
+        Dialog.CloseAsync(Content);
+    }
+}

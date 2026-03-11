@@ -4,7 +4,7 @@ using FingerPrintService;
 
 namespace Etkezes_Ellenor.Services
 {
-    public class DataService(LoginUserService loginService, FPService fPService)
+    public class DataService(LoginUserService loginService, IFPService fPService)
     {
         private User _user = new();
         private LoginUser _loginUser = new();
@@ -15,15 +15,15 @@ namespace Etkezes_Ellenor.Services
         public IQueryable<User> GetUsers()
         {
             IList<User> users = [];
-            users.Add(new() { Id = 78965412301, Name = "Diák 1", Osztaly = "5.a", Etkezik = true });
-            users.Add(new() { Id = 78965412302, Name = "Diák 2", Osztaly = "5.a", Etkezik = true });
-            users.Add(new() { Id = 78965412303, Name = "Diák 3", Osztaly = "6.a", Etkezik = false });
-            users.Add(new() { Id = 78965412304, Name = "Diák 4", Osztaly = "6.a", Etkezik = true });
-            users.Add(new() { Id = 78965412305, Name = "Diák 5", Osztaly = "7.a", Etkezik = false });
-            users.Add(new() { Id = 78965412306, Name = "Diák 6", Osztaly = "7.b", Etkezik = true });
+            users.Add(new() { Id = 78965412311, Name = "Diák 11", Osztaly = "5.b", Etkezik = true });
+            users.Add(new() { Id = 78965412312, Name = "Diák 12", Osztaly = "5.b", Etkezik = true });
+            users.Add(new() { Id = 78965412313, Name = "Diák 13", Osztaly = "6.b", Etkezik = false });
+            users.Add(new() { Id = 78965412314, Name = "Diák 14", Osztaly = "6.b", Etkezik = true });
+            users.Add(new() { Id = 78965412315, Name = "Diák 15", Osztaly = "7.b", Etkezik = false });
+            users.Add(new() { Id = 78965412316, Name = "Diák 16", Osztaly = "7.c", Etkezik = true });
             return users.AsQueryable();
         }
-        public bool LoginUsersLoad()
+        public async Task<bool> LoginUsersLoad()
         {
             try
             {
@@ -35,7 +35,7 @@ namespace Etkezes_Ellenor.Services
                 }
                 foreach (var item in users)
                 {
-                    if (fPService.AddFingerprint(item.FingerPrint1, item.FpId))
+                    if (await fPService.AddFingerprintAsync(item.FingerPrint1, item.FpId))
                     {
                         Console.WriteLine($"Fingerprint for user {item.Name} added successfully.");
 
@@ -49,7 +49,7 @@ namespace Etkezes_Ellenor.Services
                         Console.WriteLine($"No second fingerprint for user {item.Name}.");
                         continue;
                     }
-                    if (fPService.AddFingerprint(item.FingerPrint2, item.FpId + 1000))
+                    if (await fPService.AddFingerprintAsync(item.FingerPrint2, item.FpId + 1000))
                     {
                         Console.WriteLine($"Second fingerprint for user {item.Name} added successfully.");
                     }

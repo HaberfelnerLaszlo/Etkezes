@@ -1,0 +1,116 @@
+﻿@page "/users"
+@inject UserService userService
+@inject IDialogService dialogService
+@inject IToastService toastService
+@implements IDisposable
+
+<PageTitle>Diákok</PageTitle>
+<h3>UserPage</h3>
+<SelectOsztaly OnSelectOsztaly="SelectOsztaly"></SelectOsztaly>
+<FluentStack Orientation="Orientation.Horizontal" HorizontalGap="20">
+    <FluentButton OnClick="AddUser">Új diák</FluentButton>
+    <FluentButton OnClick="AddUsers">Diákok feltöltése</FluentButton>
+</FluentStack>
+@if (users.Count == 0)
+{
+    if(IsselectedOsztaly)
+    {
+        <p>Nincs az osztálynak tanulója!</p>
+    }
+    else
+    {
+        <p>Válasz osztályt!</p>
+    }
+}
+else
+{
+    @* <UsersTable Users="users"/> *@
+}
+@code {
+    bool IsselectedOsztaly = false;
+    IList<User> users = new List<User>();
+    protected override void OnInitialized()
+    {
+        userService.OnMessageUserServiceEvent += OnMessageChange!;
+        base.OnInitialized();
+    }
+    private async void SelectOsztaly(string args)
+    {
+        IsselectedOsztaly = true;
+        users = await userService.GetUsersByOsztaly(args);
+    }
+    private async Task AddUser(MouseEventArgs args)
+    {
+        User? user = new(){Osztaly="6.a"};
+        DialogParameters parameters = new()
+        {
+            Title = "Új diák felvétele",
+            TitleTypo = Typography.H2,
+            // PrimaryAction = "Yes",
+            // PrimaryActionEnabled = true,
+            // SecondaryAction = "No",
+            Width = "500px",
+            Modal = true,
+            PreventScroll = true
+        };
+
+        IDialogReference dialog = await dialogService.ShowDialogAsync<UserDialog>(user, parameters);
+        DialogResult? result = await dialog.Result;
+        try
+        {
+            if (result is not null && result.Data is not null)
+            {
+                user = await userService.CreateAsync((User)result.Data);
+                if(user is null)
+                {
+                    toastService.ShowError("Nem sikerült a diákot elmenteni az adatbázisba!");
+                    return;
+                }
+                users.Add(user);
+            }
+        }
+        catch (Exception ex)
+        {
+            toastService.ShowError(ex.Message);
+        }
+    }
+    private async Task AddUsers(MouseEventArgs args)
+    {
+        MemoryStream? stream = new();
+        DialogParameters parameters = new()
+        {
+            Width = "500px",
+            Modal = true,
+            PreventScroll = true
+        };
+
+        IDialogReference dialog = await dialogService.ShowDialogAsync<UploadDialog>(stream, parameters);
+        DialogResult? result = await dialog.Result;
+        try
+        {
+            if (result is not null && result.Data is not null)
+            {
+                stream = (MemoryStream)result.Data;
+                if(stream is null)
+                {
+                    toastService.ShowError("Nem sikerült a Fájl feltöltése!");
+                    return;
+                }
+                
+            }
+        }
+        catch (Exception ex)
+        {
+            toastService.ShowError(ex.Message);
+        }
+    }
+    void IDisposable.Dispose()
+    {
+        userService.OnMessageUserServiceEvent -= OnMessageChange!;
+    }
+
+    private void OnMessageChange(object sender, MessageUserServiceEventArg arg)
+    {
+        toastService.ShowError(arg.Message);
+    }
+}

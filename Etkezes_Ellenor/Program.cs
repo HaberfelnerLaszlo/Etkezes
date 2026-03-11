@@ -4,6 +4,7 @@ using Etkezes_Ellenor.Services;
 
 using FingerPrintService;
 
+using Microsoft.AspNetCore;
 using Microsoft.FluentUI.AspNetCore.Components;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -17,14 +18,21 @@ builder.Services.AddRazorComponents()
 builder.Services.AddDbContext<EtkezesDBcontext>( ServiceLifetime.Singleton);
 
 builder.Services.AddHttpClient();
-
+ZkfpNative.Initialize();
 builder.Services.AddFluentUIComponents();
-builder.Services.AddSingleton<FPService>();
+builder.Services.AddSingleton<IFPService, FPService>();
 builder.Services.AddHostedService<BgService>();
 builder.Services.AddScoped<LoginUserService>();
 builder.Services.AddScoped<UserService>();
 builder.Services.AddScoped<DataService>();
-
+builder.Services.AddSingleton<ApiHelper>();
+builder.Services.AddSingleton<SyncService>();
+builder.WebHost.ConfigureKestrel(options =>
+{
+    //options.Listen(System.Net.IPAddress.Parse("192.168.10.90"), 5001);
+    options.ListenAnyIP(5001);
+    options.ListenLocalhost(5000);
+});
 var app = builder.Build();
 
 app.MapDefaultEndpoints();
@@ -44,5 +52,6 @@ app.UseAntiforgery();
 app.MapStaticAssets();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
+app.MigrationDb();
 
 app.Run();

@@ -1,0 +1,48 @@
+﻿@inject IDialogService dialogService
+<FluentDataGrid TGridItem="Etkezes" Items="@Etkezesek.AsQueryable()">
+    <PropertyColumn Property="e=>e.UserId" Title="Id" />
+    <PropertyColumn Property="e => e.User.Name" Title="Név" />
+    <PropertyColumn Property="e => e.User.Osztaly" Title="Osztály" />
+    <PropertyColumn Property="e=>e.Datum" Title="Nap" />
+    <PropertyColumn Property="e=>e.Menu" Title="Étel" />
+    <PropertyColumn Property="e=>e.Adag" Title="Adag" />
+    <PropertyColumn Property="e => e.Darab" Title="Darab" />
+    <TemplateColumn Title="Műveletek">
+        <FluentButton Appearance="Appearance.Accent" OnClick="@(() => EditEtkezes(context))">Szerkesztés</FluentButton>
+        <FluentButton Appearance="Appearance.Accent" OnClick="@(() => Delete.InvokeAsync(context.Id))">Törlés</FluentButton>
+    </TemplateColumn>
+
+</FluentDataGrid>
+@code {
+    [Parameter]
+    public List<Etkezes> Etkezesek { get; set; } = new List<Etkezes>();
+    [Parameter]
+    public EventCallback<Etkezes> Update { get; set; }
+    [Parameter]
+    public EventCallback<int> Delete { get; set; }
+
+    bool IsEdited = false;
+    private async void EditEtkezes(Etkezes etkezes)
+    {
+        DialogParameters parameters = new()
+        {
+            Title = $"{etkezes.User.Name} adatai",
+            TitleTypo = Typography.H4,
+            Width = "500px",
+            Modal = true,
+            PreventScroll = true
+        };
+
+        IDialogReference dialog = await dialogService.ShowDialogAsync<EtkezesDialog>(etkezes, parameters);
+        DialogResult? result = await dialog.Result;
+
+        if (result.Data is not null)
+        {
+            etkezes = (Etkezes)result.Data;
+            var updatingEtkezes = Etkezesek.Find(u => u.Id == etkezes.Id);
+            updatingEtkezes = etkezes;
+            await Update.InvokeAsync(etkezes);
+        }
+    }
+
+}

@@ -1,6 +1,8 @@
 ﻿@page "/"
 @using FingerPrintService
-@inject FPService fpService
+@using SourceAFIS
+@using ZkTecoFingerPrint
+@inject IFPService fpService
 @inject LoginUserService loginService
 @inject UserService userService
 @inject DataService dataService
@@ -44,7 +46,7 @@
         </FluentGrid>
     </FluentBodyContent>
     <FluentFooter>
-        2026.02.18 21:42
+        2026.03.04 19:42
         <FluentSpacer/>
         <p>@message</p>
         <FluentSpacer/>
@@ -57,6 +59,7 @@
     protected override async Task OnInitializedAsync()
     {
         fpService.MessageChanged += OnMessageChanged!;
+        fpService.FingerPrintRegistered += OnRegistered;
         fpService.SuccessIdentification += OnIdentificationSuccess!;
     }
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -64,6 +67,11 @@
         if (firstRender)
         {
             isDeviceConnected = fpService.DeviceConnected();
+            if(isDeviceConnected)
+            {
+                toastService.ShowSuccess("Ujjlenyomat olvasó eszköz csatlakoztatva.");
+                fpService.Open();
+            }
             var users = dataService.GetUsers().ToList();
             foreach (var item in users)
             {
@@ -73,14 +81,15 @@
                 }
                 userService.AddUser(item);
             }
-            if (fpService.ClearDb()) 
-            { 
-                dataService.LoginUsersLoad();
-                userService.UserLoading();
-                fpService.SwitchIdentifyMode(true);
-                errorMessage = "Azonosítás bekapcsolva.";
-            }
-            else toastService.ShowError("Nem sikerült törölni az adatbázist, az azonosítás nem kapcsolható be!");
+            //Todo: Ide teljesen más lesz!
+            // if (fpService.ClearDb()) 
+            // { 
+            //     dataService.LoginUsersLoad();
+            //     userService.UserLoading();
+            //     fpService.SwitchIdentifyMode(true);
+            //     errorMessage = "Azonosítás bekapcsolva.";
+            // }
+            // else toastService.ShowError("Nem sikerült törölni az adatbázist, az azonosítás nem kapcsolható be!");
             StateHasChanged();
         }
     }
@@ -136,8 +145,8 @@
         if (!result.Cancelled && result.Data != null)
         {
             dataService.SetUser((User)result.Data);
-             navigationManager.NavigateTo("/fpreg");
-       }
+            navigationManager.NavigateTo("/fpreg");
+        }
     }
     // private void OnRegistationSuccess(object sender, FPRegisteredEventArgs e) 
     // {
@@ -162,6 +171,14 @@
             logger.LogInformation($"User with FP ID {e.Fid} successfully identified.");
         }
         // TODO: Add your event handling logic here
+    }
+    private void OnRegistered(object sender, FPRegisteredEventArgs e)
+    {
+        message = e.FingerPrint;
+        ZkFingerPrintResult fingerprintResult = e.Result;
+        toastService.ShowSuccess(e.FingerPrint);
+        fpService.MatchFingerprint(fingerprintResult, new List<UserFp>());
+        Console.WriteLine($"Registration Success: {message}");
     }
     public void Dispose()
     {

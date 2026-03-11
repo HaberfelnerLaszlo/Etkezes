@@ -1,0 +1,50 @@
+﻿@implements IDialogContentComponent<Etkezes>
+@inject IToastService toastService
+<FluentDialogHeader>
+    <h4>@Content.User.Name rendelése:</h4>
+    <FluentSpacer/>
+    <FluentLabel>Dátum: @Content.Datum.ToString("yyyy-MM-dd")</FluentLabel>
+</FluentDialogHeader>
+<FluentDialogBody>
+    <FluentStack Orientation="Orientation.Vertical" VerticalAlignment="VerticalAlignment.Center" VerticalGap="20">
+        @* <FluentTextField Placeholder="Adag" Value="@Content.Adag" AriaLabel="Adag" Label="Adag:"/>
+        <FluentTextField Placeholder="Menü" Value="@Content.Menu" AriaLabel="Menü" Label="Menü:" /> *@
+        <FluentSelect TOption="string" Items="@(["kis adag", "nagy adag"])" Value="@Content.Adag" AriaLabel="Adag" Label="Adag:" />
+        <FluentSelect TOption="string" Items="@(["A", "B"])" Value="@Content.Menu" AriaLabel="Menü" Label="Menü:" />
+        <FluentNumberField Value="Content.Darab" Label="Étel darabszám:" />
+    </FluentStack>
+</FluentDialogBody>
+<FluentDialogFooter>
+    <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="10">
+        <FluentButton OnClick="Close">Mentés</FluentButton>
+        <FluentButton OnClick="() => Dialog.CancelAsync()">Mégsem</FluentButton>
+    </FluentStack>
+</FluentDialogFooter>
+
+@code {
+    [Parameter]
+    public Etkezes Content { get; set; } = default!;
+    [CascadingParameter]
+    public FluentDialog Dialog { get; set; } = default!;
+
+    private async void Close()
+    {
+        if (Content.Darab == 0)
+        {
+            toastService.ShowWarning("Nem lehet az étel darabszám nulla");
+            return;
+        }
+        if (string.IsNullOrWhiteSpace(Content.Adag))
+        {
+            toastService.ShowWarning("Nem lehet az Adag mező üres!");
+            return;
+        }
+        if (string.IsNullOrWhiteSpace(Content.Menu))
+        {
+            toastService.ShowWarning("Nem lehet a Menü mező üres!");
+            return;
+        }
+        await Dialog.CloseAsync(Content);
+    }
+
+}

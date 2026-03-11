@@ -1,0 +1,51 @@
+﻿@implements IDialogContentComponent<User>
+@inject IToastService toastService
+<FluentDialogHeader>
+    <h4>Diák adatai:</h4>
+</FluentDialogHeader>
+<FluentDialogBody>
+    <FluentStack Orientation="Orientation.Vertical" VerticalAlignment="VerticalAlignment.Center" VerticalGap="20">
+        <FluentNumberField Value="Content.Id" Label="Azonosító"/>
+        <FluentTextField Placeholder="Felhasználónév" Value="@Content.Name" AriaLabel="Név" Label="Név:"/>
+        <SelectOsztaly OnSelectOsztaly="SelectedOsztaly"/>
+        <FluentSwitch Value="@Content.Etkezik" Label="Étkezik?"/>
+    </FluentStack>
+</FluentDialogBody>
+<FluentDialogFooter>
+    <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="10">
+        <FluentButton OnClick="Close">Mentés</FluentButton>
+        <FluentButton OnClick="() => Dialog.CancelAsync()">Mégsem</FluentButton>
+    </FluentStack>
+</FluentDialogFooter>
+
+@code {
+    [Parameter]
+    public User Content { get; set; } = default!;
+    [CascadingParameter]
+    public FluentDialog Dialog { get; set; } = default!;
+
+    private void SelectedOsztaly(string osztaly)
+    {
+        Content.Osztaly = osztaly;
+    }
+
+    private async void Close()
+    {
+        if (Content.Id == 0)
+        {
+            toastService.ShowWarning("Nem lehet az azonosító nulla");
+            return;
+        }
+        if (string.IsNullOrWhiteSpace(Content.Name))
+        {
+            toastService.ShowWarning("Nem lehet a Név mező üres!");
+            return;
+        }
+        if (string.IsNullOrWhiteSpace(Content.Osztaly))
+        {
+            toastService.ShowWarning("Nem lehet az Osztály mező üres!");
+            return;
+        }
+        await Dialog.CloseAsync(Content);
+    }
+}

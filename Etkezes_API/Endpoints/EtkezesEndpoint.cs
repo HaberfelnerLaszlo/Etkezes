@@ -1,7 +1,7 @@
-﻿using Etkezes_API.Data;
-using Etkezes_API.Services;
+﻿using Etkezes_API.Services;
 
 using Etkezes_Models;
+using Etkezes_Models.ViewModels;
 
 using MySqlX.XDevAPI.Common;
 
@@ -12,52 +12,96 @@ namespace Etkezes_API.Endpoints
         static readonly MainResponse response = new();
         public static void MapEtkezesEndpoint(this WebApplication app)
         {
-            app.MapGet("/etkezesek", (EtkezesService etkezesService) => GetAll(etkezesService)).WithName("GetEtkezesAll");
-            app.MapGet("/etkezesek/{date}", (DateTime date, EtkezesService etkezesService) => GetEtkezesByDate(date, etkezesService)).WithName("GetEtkezesByDate");
-            app.MapPost("/etkezes", (Etkezes etkezes, EtkezesService etkezesService) => AddEtkezes(etkezes, etkezesService)).WithName("AddEtkezes");
-            app.MapPut("etkezes/{id}", (int id, Etkezes etkezes, EtkezesService etkezesService) => UpdateEtkezes(id, etkezes, etkezesService)).WithName("UpdateEtkezes");
-            app.MapDelete("/etkezes/{id}",(int id, EtkezesService etkezesService)=>DeleteEtkezes(id, etkezesService)).WithName("DeleteEtkezes");
+            app.MapGet("/etkezesek", async (EtkezesService etkezesService) => await GetAll(etkezesService)).WithName("GetEtkezesAll");
+            app.MapGet("/etkezesek/{date}", async (DateTime date, EtkezesService etkezesService) => await GetEtkezesByDate(date, etkezesService)).WithName("GetEtkezesByDate");
+            app.MapGet("/etkezesek/osztaly/{osztaly}", async (string osztaly, EtkezesService etkezesService) => await GetEtkezesByOsztaly(osztaly, etkezesService)).WithName("GetEtkezesByOsztaly");
+            app.MapGet("/etkezesek/{date}/osztaly/{osztaly}", async (DateTime date, string osztaly, EtkezesService etkezesService) => await GetEtkezesByDateByOsztaly(date, osztaly, etkezesService)).WithName("GetEtkezesByDateByOsztaly");
+            app.MapPost("/etkezes",async (Etkezes etkezes, EtkezesService etkezesService) => await AddEtkezes(etkezes, etkezesService));
+            app.MapPut("etkezes/{id}",async (int id, Etkezes etkezes, EtkezesService etkezesService) => await UpdateEtkezes(id, etkezes, etkezesService));
+            app.MapDelete("/etkezes/{id}",async (int id, EtkezesService etkezesService)=>await DeleteEtkezes(id, etkezesService));
         }
-        private static Task<IResult> GetAll(EtkezesService service)
+
+        private static async Task<IResult> GetEtkezesByOsztaly(string osztaly, EtkezesService etkezesService)
         {
             response.Clear();
-            var etkezesek = service.GetAll();
+             var etkezesek = await etkezesService.GetAllByOsztaly(osztaly);
+            if (etkezesek == null || etkezesek.Count == 0)
+            {
+                response.Success = false;
+                response.Message = etkezesService.ErrorMessage;
+                return await Task.FromResult(Results.NotFound(response));
+            }
+            response.Success = true;
+            response.Data = etkezesek;
+            return await Task.FromResult(Results.Ok(response));
+        }
+
+        private static async Task<IResult> GetEtkezesByDateByOsztaly(DateTime date, string osztaly, EtkezesService etkezesService)
+        {
+            response.Clear();
+             var etkezesek = await etkezesService.GetEtkezesByDateByOsztaly(date, osztaly);
+            if (etkezesek == null || etkezesek.Count == 0)
+            {
+                response.Success = false;
+                response.Message = etkezesService.ErrorMessage;
+                return await Task.FromResult(Results.NotFound(response));
+            }
+            response.Success = true;
+            response.Data = etkezesek;
+            return await Task.FromResult(Results.Ok(response));
+        }
+        private static async Task<IResult> GetAll(EtkezesService service)
+        {
+            response.Clear();
+            var etkezesek = await service.GetAll();
             if (etkezesek == null || etkezesek.Count == 0)
             {
                 response.Success = false;
                 response.Message = service.ErrorMessage;
-                return Task.FromResult(Results.NotFound(response));
+                return  await Task.FromResult(Results.NotFound(response));
             }
             response.Success = true;
             response.Data = etkezesek;
-            return Task.FromResult(Results.Ok(response));
+            return await Task.FromResult(Results.Ok(response));
         }
-        private static Task<IResult> GetEtkezesByDate(DateTime date, EtkezesService service)
+        private static async Task<IResult> GetEtkezesByDate(DateTime date, EtkezesService service)
         {
             response.Clear();
-            var etkezesek = service.GetAllByDatum(date);
+            var etkezesek = await  service.GetAllByDatum(date);
             if (etkezesek == null || etkezesek.Count == 0)
             {
                 response.Success = false;
                 response.Message = service.ErrorMessage;
-                return Task.FromResult(Results.NotFound(response));
+                return await Task.FromResult(Results.NotFound(response));
             }
             response.Success = true;
-            response.Data = etkezesek;
-            return Task.FromResult(Results.Ok(response));
+                 List<EtkezokView> etkezokViews = new List<EtkezokView>();
+                foreach (var item in etkezesek)
+                {
+                    etkezokViews.Add(new EtkezokView
+                    {
+                        UserId = item.UserId,
+                        Name = item.User.Name,
+                        Menu = item.Menu,
+                        Adag = item.Adag,
+                        Darab = item.Darab
+                    });
+                }
+           response.Data = etkezokViews;
+            return await Task.FromResult(Results.Ok(response));
         }
-        private static Task<IResult> AddEtkezes(Etkezes etkezes, EtkezesService service)
+        private static async Task<IResult> AddEtkezes(Etkezes etkezes, EtkezesService service)
         {
             response.Clear();
-            if (service.Create(etkezes))
+            if (await service.Create(etkezes))
             {
                 response.Success = true;
                 response.Data = etkezes;
-                return Task.FromResult(Results.Ok(response));
+                return await Task.FromResult(Results.Ok(response));
             }
             response.Success = false;
             response.Message = service.ErrorMessage;
-            return Task.FromResult(Results.BadRequest(response));
+            return await Task.FromResult(Results.BadRequest(response));
         }
         private static Task<IResult> UpdateEtkezes(int id, Etkezes et, EtkezesService service)
         {
@@ -78,21 +122,10 @@ namespace Etkezes_API.Endpoints
                 return Task.FromResult(Results.BadRequest(response));
             }
         }
-        private static Task<IResult> DeleteEtkezes(int id, EtkezesService etkezesService)
+        private static async Task<IResult> DeleteEtkezes(int id, EtkezesService etkezesService)
         {
-            response.Clear();
-            if (etkezesService.Delete(id))
-            {
-                response.Success = true;
-                return Task.FromResult(Results.Ok(response));
-            }
-            else
-            {
-                response.Success = false;
-                response.Data = null;
-                response.Message = etkezesService.ErrorMessage;
-                return Task.FromResult(Results.BadRequest(response));
-            }
+            await etkezesService.DeleteAsync(id);
+            return await Task.FromResult(Results.NoContent());
         }
     }
 }

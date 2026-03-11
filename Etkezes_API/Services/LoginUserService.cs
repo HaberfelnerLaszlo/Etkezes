@@ -1,30 +1,36 @@
 ﻿using Etkezes_API.Data;
 using Etkezes_Models;
 
+using Microsoft.EntityFrameworkCore;
+
 namespace Etkezes_API.Services
 {
     public class LoginUserService(EtkezesDbContext dbContext)
     {
         private readonly EtkezesDbContext dbContext = dbContext;
         public string ErrorMessage { get; private set; } = string.Empty;
-        public List<LoginUser> GetAllLoginUsers()
+        public async Task<List<LoginUser>> GetAllLoginUsers()
         {
-            return dbContext.LoginUsers.ToList();
+            return await dbContext.LoginUsers.AsNoTracking().ToListAsync();
         }
-        public LoginUser? GetLoginUserById(Guid id)
+        public async Task<LoginUser?> GetLoginUserByIdAsync(Guid id)
         {
-            return dbContext.LoginUsers.Find(id);
+            return await dbContext.LoginUsers.FindAsync(id);
         }
-        public List<LoginUser>? GetLoginUsersByUpDate(DateTime datum)
+        public async Task<List<LoginUser>?> GetLoginUsersByUpDateAsync(DateTime datum)
         {
-            return dbContext.LoginUsers.Where(u => u.UpdatedAt > datum).ToList();
+            return await dbContext.LoginUsers.Where(u => u.UpdatedAt > datum).AsNoTracking().ToListAsync();
         }
-        public bool CreateLoginUser(LoginUser loginUser)
+        internal async Task<LoginUser?> GetLoginUserByUserNameAsync(string username)
+        {
+            return await dbContext.LoginUsers.FindAsync(username);
+        }
+        public async Task<bool> CreateLoginUserAsync(LoginUser loginUser)
         {
             try
             {
                 dbContext.LoginUsers.Add(loginUser);
-                dbContext.SaveChanges();
+                await dbContext.SaveChangesAsync();
                 return true;
             }
             catch (Exception ex)
@@ -33,11 +39,11 @@ namespace Etkezes_API.Services
                 return false;
             }
         }
-        public bool UpdateLoginUser(LoginUser loginUser,Guid Id)
+        public async Task<bool> UpdateLoginUserAsync(LoginUser loginUser,Guid Id)
         {
             try
             {
-                var existingUser = dbContext.LoginUsers.Find(Id);
+                var existingUser = await dbContext.LoginUsers.FindAsync(Id);
                 if (existingUser == null)
                 {
                     ErrorMessage = "User not found.";
@@ -46,7 +52,7 @@ namespace Etkezes_API.Services
                 existingUser.UserName = loginUser.UserName;
                 existingUser.Password = loginUser.Password;
                 existingUser.UpdatedAt = DateTime.UtcNow;
-                dbContext.SaveChanges();
+                await dbContext.SaveChangesAsync();
                 return true;
             }
             catch (Exception ex)
@@ -55,25 +61,10 @@ namespace Etkezes_API.Services
                 return false;
             }
         }
-        public bool DeleteLoginUser(Guid id)
+        public async Task DeleteLoginUserAsync(Guid id)
         {
-            try
-            {
-                var user = dbContext.LoginUsers.Find(id);
-                if (user == null)
-                {
-                    ErrorMessage = "User not found.";
-                    return false;
-                }
-                dbContext.LoginUsers.Remove(user);
-                dbContext.SaveChanges();
-                return true;
-            }
-            catch (Exception ex)
-            {
-                ErrorMessage = $"Error deleting user: {ex.Message}";
-                return false;
-            }
+                await dbContext.LoginUsers.Where(l=>l.Id==id).ExecuteDeleteAsync();
         }
+
     }
 }

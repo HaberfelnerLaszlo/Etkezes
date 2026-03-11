@@ -1,7 +1,12 @@
 ﻿@page "/"
-
+@inject NavigationManager navi
 <PageTitle>Home</PageTitle>
 
 <h1>Hello, world!</h1>
 
-Welcome to your new app.
+<FluentButton OnClick="@(() => navi.NavigateTo("/users"))" Style="width:150px; height:150px">
+    <ChildContent>
+        <FluentEmoji Value="@(new Emojis.PeopleBody.Color.Light.Student())" Width="128px" />
+        <FluentLabel>Diákok</FluentLabel>
+    </ChildContent>
+</FluentButton>

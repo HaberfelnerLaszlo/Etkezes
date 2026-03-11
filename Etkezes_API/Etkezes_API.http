@@ -1,6 +1,7 @@
 @Etkezes_API_HostAddress = http://localhost:5231
 
-GET {{Etkezes_API_HostAddress}}/weatherforecast/
+GET {{Etkezes_API_HostAddress}}/
 Accept: application/json
 
 ###
+GET {{Etkezes_API_HostAddress}}/sync/dates

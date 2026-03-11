@@ -1,0 +1,58 @@
+﻿@inject IDialogService dialogService
+<FluentDataGrid TGridItem="EtkezesView" Items="@Etkezesek.AsQueryable()">
+    <PropertyColumn Property="e=>e.UserId" Title="Id" />
+    <PropertyColumn Property="e => e.Name" Title="Név" />
+    <PropertyColumn Property="e => e.Osztaly" Title="Osztály" />
+    <PropertyColumn Property="e=>e.Datum" Title="Nap" />
+    <PropertyColumn Property="e=>e.Menu" Title="Étel" />
+    <PropertyColumn Property="e=>e.Adag" Title="Adag" />
+    <PropertyColumn Property="e => e.Darab" Title="Darab" />
+    <TemplateColumn Title="Műveletek">
+        <FluentButton Appearance="Appearance.Accent" OnClick="@(() => EditEtkezes(context))">Szerkesztés</FluentButton>
+        <FluentButton Appearance="Appearance.Accent" OnClick="@(() => Delete.InvokeAsync(context.Id))">Törlés</FluentButton>
+    </TemplateColumn>
+
+</FluentDataGrid>
+@code {
+    [Parameter]
+    public List<EtkezesView> Etkezesek { get; set; } = new List<EtkezesView>();
+    [Parameter]
+    public EventCallback<Etkezes> Update { get; set; }
+    [Parameter]
+    public EventCallback<int> Delete { get; set; }
+    bool IsEdited = false;
+    private async void EditEtkezes(EtkezesView etkezesView)
+    {
+        DialogParameters parameters = new()
+        {
+            Title = $"{etkezesView.Name} adatai",
+            TitleTypo = Typography.H4,
+            Width = "500px",
+            Modal = true,
+            PreventScroll = true
+        };
+        Etkezes etkezes = new Etkezes
+        {
+            Id = etkezesView.Id,
+            UserId = etkezesView.UserId,
+            User = new User
+            {
+                Name = etkezesView.Name,
+                Osztaly = etkezesView.Osztaly
+            },
+            Datum = etkezesView.Datum,
+            Menu = etkezesView.Menu,
+            Adag = etkezesView.Adag,
+            Darab = etkezesView.Darab
+        };
+        IDialogReference dialog = await dialogService.ShowDialogAsync<EtkezesDialog>(etkezes, parameters);
+        DialogResult? result = await dialog.Result;
+
+        if (result.Data is not null)
+        {
+            etkezes = (Etkezes)result.Data;
+            await Update.InvokeAsync(etkezes);
+        }
+    }
+
+}

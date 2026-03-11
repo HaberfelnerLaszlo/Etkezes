@@ -1,0 +1,52 @@
+@inject IDialogService dialogService
+
+<FluentDataGrid TGridItem="User" Items="Users.AsQueryable()" >
+    <PropertyColumn Property="u => u.Name" Title="Név" />
+    <PropertyColumn Property="u => u.Osztaly" Title="Osztály" />
+    <PropertyColumn Property="u => u.Etkezik" Title="Étkezik?" />
+    <PropertyColumn Property="u => u.FpId" Title="Id" />
+    <PropertyColumn Property="u => u.FingerPrint1" Title="1. Ujjlenyomat" />
+    <PropertyColumn Property="u => u.FingerPrint2" Title="2. Ujjlenyomat" />
+    <TemplateColumn Title="Mûveletek">
+        <FluentButton Appearance="Appearance.Accent" OnClick="@(() => EditUser(context))">Szerkesztés</FluentButton>
+        <FluentButton Appearance="Appearance.Accent" OnClick="@(() => DeleteUser(context))">Törlés</FluentButton>
+    </TemplateColumn>
+</FluentDataGrid>
+<FluentButton OnClick="@(async ()=>await Save.InvokeAsync(Users))" Disabled="!IsEdited">Mentés</FluentButton>
+@code{
+    [Parameter]
+    public List<User> Users { get; set; } = new();
+    [Parameter]
+    public EventCallback<List<User>> Save { get; set; }
+    [Parameter]
+    public EventCallback<User> Delete { get; set; }
+
+    bool IsEdited = false;
+
+    private async void EditUser(User user)
+    {
+        DialogParameters parameters = new()
+        {
+            Title = $"{user.Name} adatai",
+            TitleTypo = Typography.H4,
+            // PrimaryAction = "Yes",
+            // PrimaryActionEnabled = true,
+            // SecondaryAction = "No",
+            Width = "500px",
+            Modal = true,
+            PreventScroll = true
+        };
+
+        IDialogReference dialog = await dialogService.ShowDialogAsync<LoginDialog>(user, parameters);
+        DialogResult? result = await dialog.Result;
+
+        if (result.Data is not null)
+        {
+            user = (User)result.Data;
+            var updatingUser = Users.Find(u =>u.Id== user.Id);
+            updatingUser = user;
+        }
+        //await Edit.InvokeAsync(user); 
+    }
+    private async void DeleteUser(User user) => await Delete.InvokeAsync(user);
+}

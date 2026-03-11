@@ -1,7 +1,7 @@
 ﻿@page "/reg"
 @using System.Security.Cryptography
 @using System.Text
-@inject FPService fpService
+@inject IFPService fpService
 @inject LoginUserService loginService
 @inject IToastService toastService
 @inject NavigationManager navigationManager
@@ -33,7 +33,7 @@
 </FluentEditForm>
 @if (fpIndex <= 2)
 {
-    <FluentButton Appearance="Appearance.Neutral" OnClick="() => fpService.NewFingerprint(fpIndex)">@fpIndex . Ujjlenyomat Regisztráció</FluentButton>
+    <FluentButton Appearance="Appearance.Neutral" OnClick="async () => await fpService.NewFingerprintAsync(fpIndex)">@fpIndex . Ujjlenyomat Regisztráció</FluentButton>
 }
 
 @code {

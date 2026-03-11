@@ -6,7 +6,7 @@
 </FluentDialogHeader>
 <FluentDialogBody>
 
-    <FluentSelect TOption="string" Label="Osztály" Required="true" Items="osztalyok" OptionValue="@(o => o)" OptionText="@(o => o + " osztály")" Placeholder="Válassza ki a keresett osztályt" SelectedOptionChanged="SelectedOsztaly" Height="100px"/>
+    <FluentSelect TOption="string" Label="Osztály" Required="true" Items="osztalyok" OptionValue="@(o => o)" OptionText="@(o => o + " osztály")" Placeholder="Válassza ki a keresett osztályt" SelectedOptionChanged="SelectedOsztaly" Height="150px"/>
     @if (!string.IsNullOrWhiteSpace(osztaly))
     {
         <FluentDataGrid Items="@users.AsQueryable()" TGridItem="User" >
