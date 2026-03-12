@@ -32,8 +32,8 @@ namespace Etkezes_Ellenor.Services
 
         public Task StartingAsync(CancellationToken cancellationToken)
         {
-            //_fpService.Open();
-            _fpService.DeviceInit();
+            _fpService.Open();
+            //_fpService.DeviceInit();
             _logger.LogInformation("Fingerprint service started.");
             return Task.CompletedTask;
         }

@@ -42,6 +42,11 @@
     string password = string.Empty;
     protected override async Task OnInitializedAsync()
     {
+        if(!fpService.DeviceConnected())
+            {
+                toastService.ShowSuccess("Ujjlenyomat olvasó eszköz csatlakoztatása.");
+                await fpService.Open();
+            }
         fpService.MessageChanged += OnMessageChanged!;
         fpService.FingerPrintRegistered += OnRegistationSuccess!;
 
@@ -81,7 +86,7 @@
     }
     public void Dispose()
     {
-        //fpService.Close();
+        fpService.Close();
         fpService.MessageChanged -= OnMessageChanged!;
         fpService.FingerPrintRegistered -= OnRegistationSuccess!;
     }

@@ -59,7 +59,7 @@
     protected override async Task OnInitializedAsync()
     {
         fpService.MessageChanged += OnMessageChanged!;
-        fpService.FingerPrintRegistered += OnRegistered;
+        fpService.FingerPrintRegistered += OnRegistered!;
         fpService.SuccessIdentification += OnIdentificationSuccess!;
     }
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -70,7 +70,7 @@
             if(isDeviceConnected)
             {
                 toastService.ShowSuccess("Ujjlenyomat olvasó eszköz csatlakoztatva.");
-                fpService.Open();
+                await fpService.Open();
             }
             var users = dataService.GetUsers().ToList();
             foreach (var item in users)
@@ -182,7 +182,7 @@
     }
     public void Dispose()
     {
-        //fpService.Close();
+        fpService.Close();
         fpService.MessageChanged -= OnMessageChanged!;
         fpService.SuccessIdentification -= OnIdentificationSuccess!;
     }

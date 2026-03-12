@@ -17,7 +17,7 @@
 </FluentDataGrid>
 
 @code {
-    IQueryable<User> users;
+    IQueryable<User> users = new List<User>().AsQueryable();
     protected override async Task OnInitializedAsync()
     {
         users = userService.GetAllUsers().AsQueryable();

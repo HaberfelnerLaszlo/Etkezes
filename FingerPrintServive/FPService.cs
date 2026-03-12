@@ -57,7 +57,8 @@ namespace FingerPrintService
             if ((ret = ZkfpLinux.ZKFPM_Init()) == zkfperrdef.ZKFP_ERR_OK)
             {
                 //devCount = zkfp2.GetDeviceCount();
-                devCount = ZkfpLinux.ZKFPM_GetDeviceCount();
+                devCount = ZkfpLinux.ZKFPM_GetDeviceCount(); 
+                
                 if (devCount > 0)
                 {
                 _logger.LogInformation("Number of devices connected: {DevCount}", devCount);
@@ -109,13 +110,15 @@ namespace FingerPrintService
             }
 
             int ret = zkfp.ZKFP_ERR_OK;
- //           if (IntPtr.Zero == (mDevHandle = zkfp2.OpenDevice(0)))
+            if (IntPtr.Zero == mDevHandle )
+ {
             if (IntPtr.Zero == (mDevHandle = ZkfpLinux.ZKFPM_OpenDevice(0)))
             {
                 ErrorInfo = "Eszköz megnyitása sikertelen!";
                 _logger?.LogError(ErrorInfo+mDevHandle.ToString());
                 MessageChanged?.Invoke(this, new FPMessageChangedEventArgs(ErrorInfo, true));
                 return;
+            }
             }
             if (IntPtr.Zero == (mDBHandle = ZkfpLinux.ZKFPM_DBInit()))
             {
@@ -136,16 +139,16 @@ namespace FingerPrintService
             byte[] paramValue = new byte[4];
             int size = 4;
             ZkfpLinux.ZKFPM_GetParameters(mDevHandle, 1, paramValue, ref size);
-            ZkfpLinux.ZKFPM_ByteArray2Int(paramValue, ref mfpWidth);
-
+            //ZkfpLinux.ZKFPM_ByteArray2Int(paramValue, ref mfpWidth);
+            mfpHeight=ByteIntConverter.ToInt(paramValue, bigEndian: false);
             size = 4;
             ZkfpLinux.ZKFPM_GetParameters(mDevHandle, 2, paramValue, ref size);
-            ZkfpLinux.ZKFPM_ByteArray2Int(paramValue, ref mfpHeight);
-
+            //ZkfpLinux.ZKFPM_ByteArray2Int(paramValue, ref mfpHeight);
+            mfpWidth = ByteIntConverter.ToInt(paramValue, bigEndian: false);
             FPBuffer = new byte[mfpWidth * mfpHeight];
 
             captureThread = new Thread(new ThreadStart(DoCapture));
-            captureThread.IsBackground = true;
+            captureThread.IsBackground = false;
             captureThread.Start();
             bIsTimeToDie = false;
 
@@ -359,7 +362,7 @@ namespace FingerPrintService
         }
         public bool DeviceConnected()
         {
-            _logger.LogInformation($"Checking device connection status... Device handle: {mDevHandle}");
+            //_logger.LogInformation($"Checking device connection status... Device handle: {mDevHandle}");
             return mDevHandle != IntPtr.Zero;
 
         }
