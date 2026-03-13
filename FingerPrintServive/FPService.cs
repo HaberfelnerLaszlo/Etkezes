@@ -112,7 +112,8 @@ namespace FingerPrintService
             int ret = zkfp.ZKFP_ERR_OK;
             if (IntPtr.Zero == mDevHandle )
  {
-            if (IntPtr.Zero == (mDevHandle = ZkfpLinux.ZKFPM_OpenDevice(0)))
+            Console.WriteLine("Opening device...");
+                if (IntPtr.Zero == (mDevHandle = ZkfpLinux.ZKFPM_OpenDevice(0)))
             {
                 ErrorInfo = "Eszköz megnyitása sikertelen!";
                 _logger?.LogError(ErrorInfo+mDevHandle.ToString());
@@ -148,13 +149,14 @@ namespace FingerPrintService
             FPBuffer = new byte[mfpWidth * mfpHeight];
 
             captureThread = new Thread(new ThreadStart(DoCapture));
-            captureThread.IsBackground = false;
+            captureThread.IsBackground = true;
             captureThread.Start();
             bIsTimeToDie = false;
 
         }
         private void DoCapture()
         {
+            Console.WriteLine("Starting fingerprint capture thread...");
             while (!bIsTimeToDie)
             {
                 cbCapTmp = 2048;
@@ -162,10 +164,12 @@ namespace FingerPrintService
                 if (ret == zkfp.ZKFP_ERR_OK)
                 {
                     // Process the captured fingerprint data (FPBuffer) as needed
+                    Console.WriteLine("Fingerprint captured successfully, processing...");
                     Register();
                 }
                 Thread.Sleep(200);
             }
+            Console.WriteLine("Exiting fingerprint capture thread...");
         }
         private void Register()
         {
@@ -242,7 +246,7 @@ namespace FingerPrintService
                 {
                     int ret = zkfp.ZKFP_ERR_OK;
                      
-                    ret = zkfp2.DBIdentify(mDBHandle, CapTmp, ref fid, ref score);
+                    ret = ZkfpLinux.ZKFPM_DBIdentify(mDBHandle, CapTmp, ref fid, ref score);
                     if (zkfp.ZKFP_ERR_OK == ret)
                     {
                         SuccessInfo = "Sikeres azonosítás, fid= " + fid + ",score=" + score + "!";
