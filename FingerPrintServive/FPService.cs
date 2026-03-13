@@ -178,6 +178,7 @@ namespace FingerPrintService
             //Bitmap bmp = new Bitmap(ms);
             if (IsRegister)
             {
+                Console.WriteLine("Registering fingerprint...");
                 int ret = zkfp.ZKFP_ERR_OK;
                 int fid = 0, score = 0;
                 if (cbRegTmp <= 0)
@@ -187,7 +188,9 @@ namespace FingerPrintService
                     //IsRegister = true;
                     return;
                 }
-                ret = ZkfpLinux.ZKFPM_DBIdentify(mDBHandle, CapTmp, ref fid, ref score);
+                ret = ZkfpLinux.ZKFPM_DBIdentify(mDBHandle, CapTmp, (uint)CapTmp.Length, out uint fidUint, out uint scoreUint);
+                fid = (int)fidUint;
+                score = (int)scoreUint;
                 if (zkfp.ZKFP_ERR_OK == ret)
                 {
                     ErrorInfo = "Ujjlenyomat már regisztrálva van, fid= " + fid + "!";
@@ -241,12 +244,15 @@ namespace FingerPrintService
                 //    //IsRegister = true;
                 //    return;
                 //}
+                Console.WriteLine("Identifying fingerprint...");
                 int fid = 0, score = 0;
                 if (bIdentify)
                 {
                     int ret = zkfp.ZKFP_ERR_OK;
                      
-                    ret = ZkfpLinux.ZKFPM_DBIdentify(mDBHandle, CapTmp, ref fid, ref score);
+                    ret = ZkfpLinux.ZKFPM_DBIdentify(mDBHandle, CapTmp, (uint)CapTmp.Length, out uint fidUint, out uint scoreUint);
+                     fid = (int)fidUint;
+                     score = (int)scoreUint;
                     if (zkfp.ZKFP_ERR_OK == ret)
                     {
                         SuccessInfo = "Sikeres azonosítás, fid= " + fid + ",score=" + score + "!";
@@ -329,7 +335,9 @@ namespace FingerPrintService
                 }
                 byte[] blob = Base64Converter.ToBytes(fingerPrintBase64).Bytes;
                 int fid = 0, score = 0;
-                int ret = ZkfpLinux.ZKFPM_DBIdentify(mDBHandle, blob, ref fid, ref score);
+                int ret = ZkfpLinux.ZKFPM_DBIdentify(mDBHandle, blob, (uint)blob.Length, out uint fidUint, out uint scoreUint);
+                fid = (int)fidUint;
+                score = (int)scoreUint;
                 if (zkfp.ZKFP_ERR_OK == ret)
                 {
                     ErrorInfo = "Ujjlenyomat már regisztrálva van, fid= " + fid + "!";

@@ -42,7 +42,15 @@ public static class ZkfpLinux
     [DllImport(LibName, CallingConvention = CallingConvention.Cdecl)]
     public static extern int ZKFPM_DBMatch(IntPtr db, byte[] template1, int templateLen1, byte[] template2, int templateLen2, ref int matchedIndex);
     [DllImport(LibName, CallingConvention = CallingConvention.Cdecl)]
-    public static extern int ZKFPM_DBIdentify(IntPtr db, byte[] template, ref int fid, ref int score);
+  
+public static extern int ZKFPM_DBIdentify(
+    IntPtr hDBCache,
+    byte[] fpTemplate,
+    uint cbTemplate,    // <<< KÖTELEZŐ!
+    out uint FID,       // unsigned int*
+    out uint score      // unsigned int*
+);
+//  public static extern int ZKFPM_DBIdentify(IntPtr db, byte[] template, ref int fid, ref int score);
     [DllImport(LibName, CallingConvention = CallingConvention.Cdecl)]
     public static extern int ZKFPM_ByteArray2Int(byte[] paramValue, ref int result);
                 
