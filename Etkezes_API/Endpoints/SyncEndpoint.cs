@@ -22,7 +22,7 @@ namespace Etkezes_API.Endpoints
         {
             response.Clear();
             var res= await syncService.SyncEtkezesToServer(etkezesek);
-            if (res)
+            if (res != null)
             {
                 response.Success = true;
                 response.Data = res;
@@ -37,7 +37,7 @@ namespace Etkezes_API.Endpoints
         {
             response.Clear();
             var res= await syncService.SyncUserToServer(users);
-            if (res)
+            if (res != null)
             {
                 response.Success = true;
                 response.Data = res;
@@ -52,7 +52,7 @@ namespace Etkezes_API.Endpoints
         {
             response.Clear();
             var res= await syncService.SyncLoginUserToServer(loginUsers);
-            if (res)
+            if (res != null)
             {
                 response.Success = true;
                 response.Data = res;

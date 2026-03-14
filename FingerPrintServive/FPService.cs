@@ -140,11 +140,9 @@ namespace FingerPrintService
             byte[] paramValue = new byte[4];
             int size = 4;
             ZkfpLinux.ZKFPM_GetParameters(mDevHandle, 1, paramValue, ref size);
-            //ZkfpLinux.ZKFPM_ByteArray2Int(paramValue, ref mfpWidth);
             mfpHeight=ByteIntConverter.ToInt(paramValue, bigEndian: false);
             size = 4;
             ZkfpLinux.ZKFPM_GetParameters(mDevHandle, 2, paramValue, ref size);
-            //ZkfpLinux.ZKFPM_ByteArray2Int(paramValue, ref mfpHeight);
             mfpWidth = ByteIntConverter.ToInt(paramValue, bigEndian: false);
             FPBuffer = new byte[mfpWidth * mfpHeight];
 
@@ -185,6 +183,8 @@ namespace FingerPrintService
                 {
                     ErrorInfo = "Kérem, először regisztrálja az ujjlenyomatát!";
                     MessageChanged?.Invoke(this, new FPMessageChangedEventArgs(ErrorInfo, true, -1));
+                    cbRegTmp=RegTmp.Length;
+                    Console.WriteLine("First registration, skipping identification check..."+$"RegTmp hossz: {cbRegTmp}");
                     //IsRegister = true;
                     return;
                 }
@@ -216,7 +216,7 @@ namespace FingerPrintService
                            zkfp.ZKFP_ERR_OK == (ret = ZkfpLinux.ZKFPM_DBAdd(mDBHandle, iFid, RegTmp,RegTmp.Length)))
                     {
                         string fingerTmpBase64 = Base64Converter.ToBase64(RegTmp, false, false);
-                        //FingerPrintRegistered?.Invoke(this, new FPRegisteredEventArgs(iFid, fingerTmpBase64));
+                        FingerPrintRegistered?.Invoke(this, new FPRegisteredEventArgs(iFid, fingerTmpBase64));
                         SuccessInfo = "Sikeres regisztráció";
                         MessageChanged?.Invoke(this, new FPMessageChangedEventArgs(SuccessInfo, false));
                         iFid = (iFid >= 1000) ? iFid - 999 : iFid + 1;
@@ -342,13 +342,13 @@ namespace FingerPrintService
                 {
                     ErrorInfo = "Ujjlenyomat már regisztrálva van, fid= " + fid + "!";
                     _logger.LogWarning(ErrorInfo, fid);
-                    //MessageChanged?.Invoke(this, new FPMessageChangedEventArgs(ErrorInfo, true, ret));
+                    MessageChanged?.Invoke(this, new FPMessageChangedEventArgs(ErrorInfo, true, ret));
                     return true;
                 }
                 ret = ZkfpLinux.ZKFPM_DBAdd(mDBHandle, fId, blob, blob.Length);
                 if (ret == zkfp.ZKFP_ERR_OK)
                 {
-                    //FingerPrintRegistered?.Invoke(this, new FPRegisteredEventArgs(fId, fingerPrintBase64));
+                    FingerPrintRegistered?.Invoke(this, new FPRegisteredEventArgs(fId, fingerPrintBase64));
                     SuccessInfo = "Sikeres adatbázis regisztráció";
                     MessageChanged?.Invoke(this, new FPMessageChangedEventArgs(SuccessInfo, false, SUCCESS_DB_ADD));
                     //cbRegTmp = blob.Length;
@@ -424,11 +424,10 @@ namespace FingerPrintService
         public int Fid { get; private set; } 
         public string FingerPrint { get; private set; }
         public ZkFingerPrintResult Result { get; private set; }
-        public FPRegisteredEventArgs(int fid, string fingerPrint, ZkFingerPrintResult result)
+        public FPRegisteredEventArgs(int fid, string fingerPrint)
         {
             Fid = fid;
             FingerPrint = fingerPrint;
-            Result = result;
         }
     }
     public class FPSuccessIdentificationEventArgs : EventArgs

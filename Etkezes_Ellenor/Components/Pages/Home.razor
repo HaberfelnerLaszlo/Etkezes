@@ -6,6 +6,7 @@
 @inject LoginUserService loginService
 @inject UserService userService
 @inject DataService dataService
+@inject SyncService syncService
 @inject ILogger<Home> logger
 @inject IToastService toastService
 @inject IDialogService dialogService
@@ -19,7 +20,15 @@
         <FluentLabel Style="margin-left: 10px; font-size: 0.9em; color: var(--neutral-foreground-warning);">
             @errorMessage
         </FluentLabel>
-        <FluentSpacer/>
+        <FluentSpacer />
+        @if (identifiedUser != null)
+        {
+            <FluentLabel>Azonosított felhasználó: @identifiedUser.Name</FluentLabel>
+        }
+        else
+        {
+            <FluentButton Appearance="Appearance.Lightweight" OnClick="@(() => LoginPage())">Belépés</FluentButton>                    
+        }
         @if (isDeviceConnected)
         {
             <FluentIcon Value="@(new Icons.Filled.Size20.DeviceMeetingRoom())" Color="Color.Neutral"/>
@@ -29,33 +38,38 @@
             <FluentIcon Value="@(new Icons.Regular.Size20.DeviceMeetingRoomRemote())" Color="Color.Disabled" />
         }
     </FluentHeader>
-    <FluentBodyContent Style="height: 90%;">
+    <FluentBodyContent Style="height: auto;">
         <FluentGrid Justify="JustifyContent.SpaceBetween"
                     Style="background-color: var(--neutral-layer-3); overflow: hidden; resize: horizontal; padding: 4px;">
             <FluentGridItem Style="min-width: 200px;" Justify="JustifyContent.Center">
                 <img src="images/positive-check-mark.png" alt="Enabled" style="width: 500px; height: 500px;" />
             </FluentGridItem>
+            @if(identifiedUser != null)
+            {
             <FluentGridItem Justify="JustifyContent.FlexEnd" Gap="10px">
                 <FluentStack Orientation="Orientation.Vertical" VerticalAlignment="VerticalAlignment.Center" HorizontalAlignment="HorizontalAlignment.Right">
                     <FluentButton Appearance="Appearance.Neutral" OnClick="() => { errorMessage = string.Empty; fpService.Open(); }">Indítás</FluentButton>
+                    <FluentButton Appearance="Appearance.Neutral" OnClick="async () => { errorMessage = string.Empty; await syncService.GetSyncDates(); }">Szinkronizáció</FluentButton>
                     <FluentButton Appearance="Appearance.Neutral" OnClick="@(() => navigationManager.NavigateTo("/reg"))">Regisztráció</FluentButton>
                     <FluentButton Appearance="Appearance.Neutral" OnClick="@(() => navigationManager.NavigateTo("/loginusers"))">Felhasználók</FluentButton>
                     <FluentButton Appearance="Appearance.Neutral" OnClick="@(() => navigationManager.NavigateTo("/users"))">Étkezők</FluentButton>
                 </FluentStack>
-            </FluentGridItem>
+                </FluentGridItem>
+            }
         </FluentGrid>
     </FluentBodyContent>
     <FluentFooter>
-        2026.03.04 19:42
+        2026.03.14 19:42
         <FluentSpacer/>
         <p>@message</p>
         <FluentSpacer/>
-        Verzió: 0.3.0
+        Verzió: 0.4.3
     </FluentFooter>
 </FluentLayout>
 @code {
     string message = "A jók", errorMessage = "A hibák";
     bool isDeviceConnected = false;
+    LoginUser? identifiedUser = null;
     protected override async Task OnInitializedAsync()
     {
         fpService.MessageChanged += OnMessageChanged!;
@@ -64,14 +78,19 @@
     }
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
+        isDeviceConnected = fpService.DeviceConnected();
         if (firstRender)
         {
-            isDeviceConnected = fpService.DeviceConnected();
             if(isDeviceConnected)
             {
                 toastService.ShowSuccess("Ujjlenyomat olvasó eszköz csatlakoztatva.");
+            }
+            else
+            {
+                toastService.ShowError("Nincs csatlakoztatva ujjlenyomat olvasó eszköz!");
                 await fpService.Open();
             }
+            identifiedUser = dataService.GetLoginUser();
             var users = dataService.GetUsers().ToList();
             foreach (var item in users)
             {
@@ -82,14 +101,14 @@
                 userService.AddUser(item);
             }
             //Todo: Ide teljesen más lesz!
-            // if (fpService.ClearDb()) 
-            // { 
-            //     dataService.LoginUsersLoad();
-            //     userService.UserLoading();
-            //     fpService.SwitchIdentifyMode(true);
-            //     errorMessage = "Azonosítás bekapcsolva.";
-            // }
-            // else toastService.ShowError("Nem sikerült törölni az adatbázist, az azonosítás nem kapcsolható be!");
+            if (fpService.ClearDb()) 
+            { 
+                await dataService.LoginUsersLoad();
+                await userService.UserLoading();
+                fpService.SwitchIdentifyMode(true);
+                errorMessage = "Azonosítás bekapcsolva.";
+            }
+            else toastService.ShowError("Nem sikerült törölni az adatbázist, az azonosítás nem kapcsolható be!");
             StateHasChanged();
         }
     }
@@ -160,7 +179,21 @@
         if (loginService.HandleSuccessfulIdentification(e.Fid))
         {
             // Handle successful login
-            toastService.ShowSuccess("Sikeres azonosítás! Üdvözlünk!"); //TODO: Personalizált üdvözlés a felhasználó nevével, belépés felajánlása
+            identifiedUser = loginService.GetUserByFpId(e.Fid);
+            toastService.ShowSuccess($"Sikeres azonosítás! Üdvözlünk, {identifiedUser.Name}!"); //TODO: Personalizált üdvözlés a felhasználó nevével, belépés felajánlása
+            toastService.ShowCommunicationToast(new ToastParameters<CommunicationToastContent>()
+            {
+                Intent = ToastIntent.Error,
+                Title = "Szeretne belépni?",
+                TopCTAType = ToastTopCTAType.Timestamp,
+                Timeout = 8000,
+                PrimaryAction = "Igen",
+                OnPrimaryAction = EventCallback.Factory.Create<ToastResult>(this, ()=> { dataService.SetLoginUser(identifiedUser); StateHasChanged(); }),
+                Content = new CommunicationToastContent()
+                {
+                    Details = "Szeretne belépni?",
+                },
+            });
             logger.LogInformation($"User with FP ID {e.Fid} successfully identified.");
             return;
         }
@@ -172,12 +205,46 @@
         }
         // TODO: Add your event handling logic here
     }
+    private async void LoginPage()
+    {
+        LoginData? loginData = new();
+        DialogParameters parameters = new()
+        {
+            Title = "Belépés",
+            PreventDismissOnOverlayClick = true,
+            Width = "500px",
+            Modal = true,
+            PreventScroll = true
+        };
+
+        IDialogReference dialog = await dialogService.ShowDialogAsync<LoginDialog>(loginData, parameters);
+        DialogResult? result = await dialog.Result;
+
+        if (result.Data is not null)
+        {
+            loginData = result.Data as LoginData;
+            if(loginService.ValidateUser(loginData.UserName, loginData.Password))
+            {
+                identifiedUser = loginService.GetUserByUserName(loginData.UserName);
+                dataService.SetLoginUser(identifiedUser);
+                toastService.ShowSuccess($"Belépés sikeres! Üdvözlünk, {identifiedUser.Name}!");
+                StateHasChanged();
+            }
+            else
+            {
+                toastService.ShowError("Hibás felhasználónév vagy jelszó. Kérem próbálja újra.");
+            }
+        }
+        else
+        {
+            toastService.ShowInfo($"Dialog closed - Canceled: {result.Cancelled}");
+        }
+    }
     private void OnRegistered(object sender, FPRegisteredEventArgs e)
     {
         message = e.FingerPrint;
-        ZkFingerPrintResult fingerprintResult = e.Result;
         toastService.ShowSuccess(e.FingerPrint);
-        fpService.MatchFingerprint(fingerprintResult, new List<UserFp>());
+        //fpService.MatchFingerprint(fingerprintResult, new List<UserFp>());
         Console.WriteLine($"Registration Success: {message}");
     }
     public void Dispose()

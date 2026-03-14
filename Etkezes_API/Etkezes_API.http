@@ -1,7 +1,20 @@
-@Etkezes_API_HostAddress = http://localhost:5231
+@Etkezes_API_HostAddress = http://192.168.10.66:5000
 
 GET {{Etkezes_API_HostAddress}}/
 Accept: application/json
 
 ###
 GET {{Etkezes_API_HostAddress}}/sync/dates
+
+###
+POST {{Etkezes_API_HostAddress}}/sync/loginusers
+Content-Type: application/json
+
+ [{
+    "name":"admin",
+    "fpid":"10001",
+    "userName":"admin",
+    "password":""
+ }]
+
+

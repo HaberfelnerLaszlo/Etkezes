@@ -11,7 +11,9 @@ namespace Etkezes_Ellenor.Services
         {
             try
             {
+                Console.WriteLine("Fetching sync dates from server...");
                 var result = await apiHelper.Get<SyncDatesView>("/sync/dates");
+
                 if (result == null) { return false; }
 
                 return await SyncCoordinator(result);
@@ -25,10 +27,27 @@ namespace Etkezes_Ellenor.Services
         }
         internal async Task<bool> SyncCoordinator(SyncDatesView syncDates)
         {
-            var loginUserSyncDateUp = await dbContext.LoginUsers.MaxAsync(sd => sd.UpdatedAt);
-            var lastUserSyncDateUp = await dbContext.SyncDatas.Where(sd => sd.Type == SyncType.Up && sd.Table == "User").MaxAsync(sd => sd.SyncDate);
-            var lastLoginUserSyncDateDown = await dbContext.SyncDatas.Where(sd => sd.Type == SyncType.Down && sd.Table == "LoginUser").MaxAsync(sd => sd.SyncDate);
-            var lastUserSyncDateDown = await dbContext.SyncDatas.Where(sd => sd.Type == SyncType.Down && sd.Table == "User").MaxAsync(sd => sd.SyncDate);
+            Console.WriteLine("Starting synchronization process...");
+            DateTime loginUserSyncDateUp = DateTime.MinValue,
+                lastUserSyncDateUp = DateTime.MinValue,
+                lastLoginUserSyncDateDown = DateTime.MinValue,
+                lastUserSyncDateDown = DateTime.MinValue;
+            if (await dbContext.LoginUsers.AnyAsync())
+            {
+                loginUserSyncDateUp = await dbContext.LoginUsers.MaxAsync(sd => sd.UpdatedAt);
+            }
+            if(await dbContext.SyncDatas.AnyAsync(sd => sd.Type == SyncType.Up && sd.Table == "User"))
+            {
+                lastUserSyncDateUp = await dbContext.SyncDatas.Where(sd => sd.Type == SyncType.Up && sd.Table == "User").MaxAsync(sd => sd.SyncDate);
+            }
+            if(await dbContext.SyncDatas.AnyAsync(sd => sd.Type == SyncType.Down && sd.Table == "LoginUser"))
+            {
+                lastLoginUserSyncDateDown = await dbContext.SyncDatas.Where(sd => sd.Type == SyncType.Down && sd.Table == "LoginUser").MaxAsync(sd => sd.SyncDate);
+            }
+            if(await dbContext.SyncDatas.AnyAsync(sd => sd.Type == SyncType.Down && sd.Table == "User"))
+            {
+                lastUserSyncDateDown = await dbContext.SyncDatas.Where(sd => sd.Type == SyncType.Down && sd.Table == "User").MaxAsync(sd => sd.SyncDate);
+            }
             bool IsSyncSuccessful = false;
             #region down
             try
@@ -165,6 +184,7 @@ namespace Etkezes_Ellenor.Services
                     }
                 #endregion
                 }
+                Console.WriteLine("Synchronization process completed.");
                 return IsSyncSuccessful;
            }
             catch (Exception ex)

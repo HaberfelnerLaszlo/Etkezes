@@ -21,9 +21,13 @@ namespace Etkezes_Ellenor.Services
         {
             return _context.LoginUsers.FirstOrDefault(u => u.Id == id);
         }
-        public LoginUser GetUserByName(string name)
+        public LoginUser GetUserByFpId(int fpId)
         {
-            return _context.LoginUsers.FirstOrDefault(u => u.Name == name) ?? new LoginUser();
+            return _context.LoginUsers.FirstOrDefault(u => u.FpId == fpId || u.FpId + 1000 == fpId) ?? new LoginUser();
+        }
+        public LoginUser GetUserByUserName(string name)
+        {
+            return _context.LoginUsers.FirstOrDefault(u => u.UserName == name) ?? new LoginUser();
         }
         public bool AddUser(LoginUser user,string password) 
         {
@@ -42,7 +46,7 @@ namespace Etkezes_Ellenor.Services
         }
         public bool ValidateUser(string name, string password)
         {
-            var user = GetUserByName(name);
+            var user = GetUserByUserName(name);
             if (user == null)
             {
                 return false;

@@ -60,20 +60,22 @@ namespace Etkezes_API.Services
             await context.SaveChangesAsync();
             return etkezesek;
         }
-        public async Task<bool> SyncLoginUserToServer(List<LoginUser> loginUsers)
+        public async Task<List<LoginUser>?> SyncLoginUserToServer(List<LoginUser> loginUsers)
         {
             try
             {
+                List<LoginUser> loginUsersToUpdate = new List<LoginUser>();
                 foreach (var loginUser in loginUsers)
                 {
                     var existingLoginUser = await context.LoginUsers.FindAsync(loginUser.Id);
                     if (existingLoginUser == null)
                     {
-                        context.LoginUsers.Add(loginUser);
+                        loginUsersToUpdate.Add( context.LoginUsers.Add(loginUser).Entity);
                     }
                     else
                     {
                         context.Entry(existingLoginUser).CurrentValues.SetValues(loginUser);
+                        loginUsersToUpdate.Add(existingLoginUser);
                     }
                 }
                 await context.SaveChangesAsync();
@@ -84,29 +86,31 @@ namespace Etkezes_API.Services
                     SyncDate = DateTime.UtcNow
                 });
                 await context.SaveChangesAsync();
-                return true;
+                return loginUsersToUpdate;
             }
             catch (Exception ex)
             {
                 // Log the exception or handle it as needed   
                 ErrorMessage = ex.Message;
-                return false;
+                return null;
             }
         }
-         public async Task<bool> SyncUserToServer(List<User> users)
+         public async Task<List<User>?> SyncUserToServer(List<User> users)
         {
             try
             {
+                List<User> usersToUpdate = new List<User>();
                 foreach (var user in users)
                 {
                     var existingUser = await context.Users.FindAsync(user.Id);
                     if (existingUser == null)
                     {
-                        context.Users.Add(user);
+                        usersToUpdate.Add(context.Users.Add(user).Entity);
                     }
                     else
                     {
                         context.Entry(existingUser).CurrentValues.SetValues(user);
+                        usersToUpdate.Add(existingUser);
                     }
                 }
                 await context.SaveChangesAsync();
@@ -117,29 +121,31 @@ namespace Etkezes_API.Services
                     SyncDate = DateTime.UtcNow
                 });
                 await context.SaveChangesAsync();
-                return true;
+                return usersToUpdate;
             }
             catch (Exception ex)
             {
                 // Log the exception or handle it as needed
                 ErrorMessage = ex.Message;
-                return false;
+                return null;
             }
         }
-        public async Task<bool> SyncEtkezesToServer(List<Etkezes> etkezesek)
+        public async Task<List<Etkezes>?> SyncEtkezesToServer(List<Etkezes> etkezesek)
         {
             try
             {
+                List<Etkezes> etkezesekToUpdate = new List<Etkezes>();
                 foreach (var etkezes in etkezesek)
                 {
                     var existingEtkezes = await context.Etkezesek.FindAsync(etkezes.Id);
                     if (existingEtkezes == null)
                     {
-                        context.Etkezesek.Add(etkezes);
+                        etkezesekToUpdate.Add(context.Etkezesek.Add(etkezes).Entity);
                     }
                     else
                     {
                         context.Entry(existingEtkezes).CurrentValues.SetValues(etkezes);
+                        etkezesekToUpdate.Add(existingEtkezes);
                     }
                 }
                 await context.SaveChangesAsync();
@@ -150,27 +156,50 @@ namespace Etkezes_API.Services
                     SyncDate = DateTime.UtcNow
                 });
                 await context.SaveChangesAsync();
-                return true;
+                return etkezesekToUpdate;
             }
             catch (Exception ex)
             {
                 // Log the exception or handle it as needed
                 ErrorMessage = ex.Message;
-                return false;
+                return null;
             }
         }
         public async Task<SyncDatesView> GetLastSyncDates()
         {
-            var lastLoginUserSyncDateUp = await context.SyncDatas.Where(sd => sd.Type == SyncType.Up && sd.Table == "LoginUser" && sd.IsSuccess).MaxAsync(sd => sd.SyncDate);
-
-            var lastUserSyncDateUp = await context.SyncDatas.Where(sd => sd.Type == SyncType.Up && sd.Table == "User" && sd.IsSuccess).MaxAsync(sd => sd.SyncDate);
-            var lastEtkezesSyncDateUp = await context.SyncDatas.Where(sd => sd.Type == SyncType.Up && sd.Table == "Etkezes" && sd.IsSuccess).MaxAsync(sd => sd.SyncDate);
-            var lastLoginUserSyncDateDown = await context.SyncDatas.Where(sd => sd.Type == SyncType.Down && sd.Table == "User" && sd.IsSuccess).MaxAsync(sd => sd.SyncDate);
-            var lastLoginUserSyncDown = await context.LoginUsers.AnyAsync(lu=>lu.UpdatedAt>lastLoginUserSyncDateDown);
-            var lastUserSyncDateDown = await context.SyncDatas.Where(sd => sd.Type == SyncType.Down && sd.Table == "User"&& sd.IsSuccess).MaxAsync(sd => sd.SyncDate);
-            var lastUserSyncDown = await context.Users.AnyAsync(u => u.Updated > lastUserSyncDateDown);
-            var lastEtkezesSyncDateDown = await context.SyncDatas.Where(sd => sd.Type == SyncType.Down && sd.Table == "Etkezes" && sd.IsSuccess).MaxAsync(sd => sd.SyncDate);
-            var lastEtkezesSyncDown = await context.Etkezesek.AnyAsync(e => e.Updated > lastEtkezesSyncDateDown);
+            DateTime lastLoginUserSyncDateUp = DateTime.MinValue;
+            DateTime lastUserSyncDateUp = DateTime.MinValue;
+            DateTime lastEtkezesSyncDateUp = DateTime.MinValue;
+            bool lastLoginUserSyncDown = false;
+            bool lastUserSyncDown = false;
+            bool lastEtkezesSyncDown = false;
+            if (await context.SyncDatas.AnyAsync(sd => sd.Type == SyncType.Up && sd.Table == "LoginUser" && sd.IsSuccess))
+            {
+                lastLoginUserSyncDateUp = await context.SyncDatas.Where(sd => sd.Type == SyncType.Up && sd.Table == "LoginUser" && sd.IsSuccess).MaxAsync(sd => sd.SyncDate);
+            }
+            if (await context.SyncDatas.AnyAsync(sd => sd.Type == SyncType.Up && sd.Table == "User" && sd.IsSuccess))
+            {
+                lastUserSyncDateUp = await context.SyncDatas.Where(sd => sd.Type == SyncType.Up && sd.Table == "User" && sd.IsSuccess).MaxAsync(sd => sd.SyncDate);
+            }
+            if (await context.SyncDatas.AnyAsync(sd => sd.Type == SyncType.Up && sd.Table == "Etkezes" && sd.IsSuccess))
+            {
+                lastEtkezesSyncDateUp = await context.SyncDatas.Where(sd => sd.Type == SyncType.Up && sd.Table == "Etkezes" && sd.IsSuccess).MaxAsync(sd => sd.SyncDate);
+            }
+            if (await context.SyncDatas.AnyAsync(sd => sd.Type == SyncType.Down && sd.Table == "LoginUser" && sd.IsSuccess))
+            {
+                var lastLoginUserSyncDateDown = await context.SyncDatas.Where(sd => sd.Type == SyncType.Down && sd.Table == "LoginUser" && sd.IsSuccess).MaxAsync(sd => sd.SyncDate);
+                lastLoginUserSyncDown = await context.LoginUsers.AnyAsync(lu=>lu.UpdatedAt>lastLoginUserSyncDateDown);
+            }
+            if (await context.SyncDatas.AnyAsync(sd => sd.Type == SyncType.Down && sd.Table == "User" && sd.IsSuccess))
+            {
+                var lastUserSyncDateDown = await context.SyncDatas.Where(sd => sd.Type == SyncType.Down && sd.Table == "User" && sd.IsSuccess).MaxAsync(sd => sd.SyncDate);
+                lastUserSyncDown = await context.Users.AnyAsync(u => u.Updated > lastUserSyncDateDown);
+            }
+            if (await context.SyncDatas.AnyAsync(sd => sd.Type == SyncType.Down && sd.Table == "Etkezes" && sd.IsSuccess))
+            {
+                var lastEtkezesSyncDateDown = await context.SyncDatas.Where(sd => sd.Type == SyncType.Down && sd.Table == "Etkezes" && sd.IsSuccess).MaxAsync(sd => sd.SyncDate);
+                lastEtkezesSyncDown = await context.Etkezesek.AnyAsync(e => e.Updated > lastEtkezesSyncDateDown);
+            }
             return new SyncDatesView
             {
                 LoginUserSyncDateUp = lastLoginUserSyncDateUp,
