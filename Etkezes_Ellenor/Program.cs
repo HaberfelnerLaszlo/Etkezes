@@ -18,7 +18,7 @@ builder.Services.AddRazorComponents()
 builder.Services.AddDbContext<EtkezesDBcontext>( ServiceLifetime.Singleton);
 
 builder.Services.AddHttpClient();
-ZkfpNative.Initialize();
+//ZkfpNative.Initialize();
 builder.Services.AddFluentUIComponents();
 builder.Services.AddSingleton<IFPService, FPService>();
 builder.Services.AddHostedService<BgService>();

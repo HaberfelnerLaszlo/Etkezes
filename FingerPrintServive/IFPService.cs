@@ -16,7 +16,7 @@ namespace FingerPrintService
         bool DeviceConnected();
         bool DeviceInit();
         void Dispose();
-        bool MatchFingerprint(ZkFingerPrintResult fingerprintResult, List<UserFp> users);
+        //bool MatchFingerprint(ZkFingerPrintResult fingerprintResult, List<UserFp> users);
         Task NewFingerprintAsync(int index);
         Task Open();
         void SwitchIdentifyMode(bool identify);

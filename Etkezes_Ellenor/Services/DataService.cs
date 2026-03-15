@@ -8,6 +8,7 @@ namespace Etkezes_Ellenor.Services
     {
         private User _user = new();
         private LoginUser _loginUser = new();
+        public event EventHandler<DataServiceMessageEventArgs>? DataServiceMessage;
         public User GetUser() => _user;
         public void SetUser(User user) => _user = user;
         public LoginUser GetLoginUser() => _loginUser;
@@ -65,6 +66,47 @@ namespace Etkezes_Ellenor.Services
                 Console.WriteLine($"Error: {ex.Message}");
                 return false;
             }
+        }
+        public bool IsAdminLogin()
+        {
+            if(loginService.GetAllUsers().Count() == 0)
+            {
+                DataServiceMessage?.Invoke(this, new DataServiceMessageEventArgs("Nincs elmentett felhasználó. Kérem regisztrálja az első felhasználót."));
+                return true;
+            }
+            if (_loginUser == null)
+            {
+                DataServiceMessage?.Invoke(this, new DataServiceMessageEventArgs("Nincs bejelentkezett felhasználó. Kérem jelentkezzen be egy adminisztrátori fiókkal."));
+                return false;
+            }
+            if (_loginUser!.Role != "Admin")
+            {
+                DataServiceMessage?.Invoke(this, new DataServiceMessageEventArgs("Nincs jogosultsága új felhasználó regisztrációjához. Kérem jelentkezzen be egy adminisztrátori fiókkal."));                                                               
+                return false;
+            }
+                return _loginUser != null && _loginUser.Role == "Admin";
+        } 
+        public bool IsUserLogin()
+        {
+            if(loginService.GetAllUsers().Count() == 0)
+            {
+                DataServiceMessage?.Invoke(this, new DataServiceMessageEventArgs("Nincs elmentett felhasználó. Kérem regisztrálja az első felhasználót."));
+                return true;
+            }
+            if (_loginUser == null)
+            {
+                DataServiceMessage?.Invoke(this, new DataServiceMessageEventArgs("Nincs bejelentkezett felhasználó. Kérem jelentkezzen be egy adminisztrátori fiókkal."));
+                return false;
+            }
+                return _loginUser != null;
+        } 
+    }
+    public class DataServiceMessageEventArgs : EventArgs
+    {
+        public string Message { get;private set; }
+        public DataServiceMessageEventArgs(string message)
+        {
+            Message = message;
         }
     }
 }

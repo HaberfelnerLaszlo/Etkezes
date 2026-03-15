@@ -1,7 +1,12 @@
 ﻿@page "/users"
 @inject UserService userService
+@inject DataService dataService
 @inject ILogger<Users> logger
 @inject IToastService toastService
+@inject NavigationManager navigationManager
+@implements IDisposable
+@if(isUserLogin)
+{
 <h3>Felhasználók</h3>
 <FluentDataGrid Items="@users">
     <PropertyColumn Property="u=>u.Name" Title="Név" />
@@ -15,11 +20,23 @@
         <FluentButton Appearance="Appearance.Accent" OnClick="@(() => DeleteUser(context))">Törlés</FluentButton>
     </TemplateColumn>
 </FluentDataGrid>
-
+}
+else
+{
+    <FluentLabel>Jelenleg nincs bejelentkezve felhasználó. Kérem jelentkezzen be egy fiókkal a felhasználók megtekintéséhez.</FluentLabel>
+    <FluentButton Appearance="Appearance.Accent" OnClick="@(() => navigationManager.NavigateTo("/"))">Bejelentkezés</FluentButton>
+}
 @code {
     IQueryable<User> users = new List<User>().AsQueryable();
+    bool isUserLogin = false;
     protected override async Task OnInitializedAsync()
     {
+        dataService.DataServiceMessage += (sender, args) =>
+        {
+            logger.LogInformation("DataService üzenet: {Message}", args.Message);
+            toastService.ShowInfo(args.Message);
+        };
+        isUserLogin = dataService.IsUserLogin();
         users = userService.GetAllUsers().AsQueryable();
     }
     private void EditUser(User user)
@@ -31,5 +48,13 @@
     {
         toastService.ShowWarning($"Törlés: {user.Name}");
         // Implement delete functionality
+    }
+    public void Dispose()
+    {
+        dataService.DataServiceMessage -= (sender, args) =>
+        {
+            logger.LogInformation("DataService üzenet: {Message}", args.Message);
+            toastService.ShowInfo(args.Message);
+        };
     }
 }

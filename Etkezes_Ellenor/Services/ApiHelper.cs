@@ -23,7 +23,7 @@ namespace Etkezes_Ellenor.Services
 
         //    client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("bearer", _token.Substring(6));
         //}
-        public event EventHandler<ErrorMessageEventArg> OnErrorMessage;
+        public event EventHandler<ErrorMessageEventArg>? OnErrorMessage;
         public async Task<Tv?> Get<Tv>(string uri)
         {
             try
@@ -113,7 +113,7 @@ namespace Etkezes_Ellenor.Services
             if (response.IsSuccessStatusCode)
             {
                 valasz = await response.Content.ReadAsStringAsync();
-                if (!string.IsNullOrEmpty(valasz) && valasz.Contains("Message"))
+                if (!string.IsNullOrEmpty(valasz) && valasz.Contains("Message", StringComparison.OrdinalIgnoreCase))
                 {
                     var deserilizeResponse = JsonConvert.DeserializeObject<MainResponse>(valasz);
                     if (deserilizeResponse != null)

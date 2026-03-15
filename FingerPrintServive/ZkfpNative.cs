@@ -62,7 +62,7 @@ namespace FingerPrintService
 
         [DllImport("libzkfp.dll")]
         private static extern IntPtr ZKFPM_OpenDevice(int index);
-
+ [DllImport("libzkfp.dll")]
         private static extern int ZKFPM_CloseDevice(IntPtr handle);
 
         [DllImport("libzkfp.dll")]
@@ -330,7 +330,7 @@ namespace FingerPrintService
         //    return ZKFPM_ExtractFromImage(dbHandle, FileName, DPI, template, ref size);
         //}
 
-        public static byte[] Base64ToBlob(string base64Str)
+        public static byte[]? Base64ToBlob(string base64Str)
         {
             if (base64Str == null || base64Str.Length <= 0 || base64Str.Length % 4 != 0)
             {

@@ -158,7 +158,7 @@ namespace FingerPrintService
             while (!bIsTimeToDie)
             {
                 cbCapTmp = 2048;
-                int ret = ZkfpLinux.ZKFPM_AcquireFingerprint(mDevHandle, FPBuffer, (uint)FPBuffer!.Length, CapTmp, ref cbCapTmp);
+                int ret = ZkfpLinux.ZKFPM_AcquireFingerprint(mDevHandle, FPBuffer!, (uint)FPBuffer!.Length, CapTmp, ref cbCapTmp);
                 if (ret == zkfp.ZKFP_ERR_OK)
                 {
                     // Process the captured fingerprint data (FPBuffer) as needed
@@ -402,11 +402,7 @@ namespace FingerPrintService
         }
         public void Dispose() => Close();
 
-        public bool MatchFingerprint(ZkFingerPrintResult fingerprintResult, List<UserFp> users)
-        {
-            throw new NotImplementedException();
-        }
-    }
+ }
     public class FPMessageChangedEventArgs : EventArgs
     {
         public string Message { get; private set; }
@@ -423,7 +419,6 @@ namespace FingerPrintService
     {
         public int Fid { get; private set; } 
         public string FingerPrint { get; private set; }
-        public ZkFingerPrintResult Result { get; private set; }
         public FPRegisteredEventArgs(int fid, string fingerPrint)
         {
             Fid = fid;
