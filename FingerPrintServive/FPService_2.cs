@@ -9,7 +9,7 @@ using Microsoft.Extensions.Logging; // <- Added to make Observable.Where/Select/
 
 namespace FingerPrintService
 {
-    public class FPService_2(ILogger<FPService_2> logger) : IFPService
+    public class FPService_2(ILogger<FPService_2> logger) 
     {
         public event EventHandler<FPRegisteredEventArgs>? FingerPrintRegistered;
         public event EventHandler<FPMessageChangedEventArgs>? MessageChanged;

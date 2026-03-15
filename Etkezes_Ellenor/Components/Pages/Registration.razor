@@ -3,9 +3,14 @@
 @using System.Text
 @inject IFPService fpService
 @inject LoginUserService loginService
+@inject ILogger<Registration> logger
+@inject DataService dataService
 @inject IToastService toastService
+@inject IDialogService dialogService
 @inject NavigationManager navigationManager
 @implements IDisposable
+@if(isAdminLogin)
+{
 <FluentStack Orientation="Orientation.Horizontal">
     <h3>Új Felhasználó Regisztrációja</h3>
     <FluentSpacer />
@@ -35,11 +40,18 @@
 {
     <FluentButton Appearance="Appearance.Neutral" OnClick="async () => await fpService.NewFingerprintAsync(fpIndex)">@fpIndex . Ujjlenyomat Regisztráció</FluentButton>
 }
-
+}
+else
+{
+    <FluentLabel>Jelenleg nincs bejelentkezve adminisztrátor. Kérem jelentkezzen be egy adminisztrátori fiókkal az új felhasználó regisztrációjához.</FluentLabel>
+    <FluentButton Appearance="Appearance.Accent" OnClick="@(() => navigationManager.NavigateTo("/"))">Bejelentkezés</FluentButton>
+}                        
 @code {
     private LoginUser newUser = new LoginUser();
     int fpIndex = 1;
     string password = string.Empty;
+    bool isAdminLogin = false;
+    //LoginUser? identifiedUser;
     protected override async Task OnInitializedAsync()
     {
         if(!fpService.DeviceConnected())
@@ -47,9 +59,39 @@
                 toastService.ShowSuccess("Ujjlenyomat olvasó eszköz csatlakoztatása.");
                 await fpService.Open();
             }
+        dataService.DataServiceMessage += OnDataServiceMessage!;
+        isAdminLogin= dataService.IsAdminLogin();
+        @* if(loginService.GetAllUsers().Count() == 0)
+            {
+                toastService.ShowWarning("Nincs elmentett felhasználó. Kérem regisztrálja az első felhasználót.");
+                isAdminLogin = true;
+            }
+        if(!isAdminLogin)
+        {
+       identifiedUser = dataService.GetLoginUser();                                                                        
+        if (identifiedUser == null)
+        {
+            toastService.ShowError("Nincs bejelentkezett felhasználó. Kérem jelentkezzen be egy adminisztrátori fiókkal.");
+ 
+            navigationManager.NavigateTo("/");
+            return;
+        }
+        if (identifiedUser.Role != "Admin")
+        {
+            toastService.ShowError("Nincs jogosultsága új felhasználó regisztrációjához. Kérem jelentkezzen be egy adminisztrátori fiókkal.");
+            navigationManager.NavigateTo("/");
+            return;
+        }
+        isAdminLogin = true;
+        } *@
         fpService.MessageChanged += OnMessageChanged!;
         fpService.FingerPrintRegistered += OnRegistationSuccess!;
 
+    }
+    private void OnDataServiceMessage(object sender, DataServiceMessageEventArgs e)
+    {
+            toastService.ShowWarning(e.Message);
+            Console.WriteLine($"Warning: {e.Message}");
     }
     private void OnMessageChanged(object sender, FPMessageChangedEventArgs e)
     {
@@ -89,6 +131,7 @@
         fpService.Close();
         fpService.MessageChanged -= OnMessageChanged!;
         fpService.FingerPrintRegistered -= OnRegistationSuccess!;
+        dataService.DataServiceMessage -= OnDataServiceMessage!;
     }
 
     private void HandleValidSubmit(EditContext args)

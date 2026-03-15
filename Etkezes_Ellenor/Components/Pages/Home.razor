@@ -21,7 +21,7 @@
             @errorMessage
         </FluentLabel>
         <FluentSpacer />
-        @if (identifiedUser != null)
+        @if (String.IsNullOrWhiteSpace(identifiedUser?.UserName) == false)
         {
             <FluentLabel>Azonosított felhasználó: @identifiedUser.Name</FluentLabel>
         }
@@ -44,7 +44,7 @@
             <FluentGridItem Style="min-width: 200px;" Justify="JustifyContent.Center">
                 <img src="images/positive-check-mark.png" alt="Enabled" style="width: 500px; height: 500px;" />
             </FluentGridItem>
-            @if(identifiedUser != null)
+            @if(String.IsNullOrWhiteSpace(identifiedUser?.UserName) == false)
             {
             <FluentGridItem Justify="JustifyContent.FlexEnd" Gap="10px">
                 <FluentStack Orientation="Orientation.Vertical" VerticalAlignment="VerticalAlignment.Center" HorizontalAlignment="HorizontalAlignment.Right">
@@ -223,7 +223,7 @@
         if (result.Data is not null)
         {
             loginData = result.Data as LoginData;
-            if(loginService.ValidateUser(loginData.UserName, loginData.Password))
+            if(loginService.ValidateUser(loginData!.UserName, loginData.Password))
             {
                 identifiedUser = loginService.GetUserByUserName(loginData.UserName);
                 dataService.SetLoginUser(identifiedUser);
@@ -242,15 +242,15 @@
     }
     private void OnRegistered(object sender, FPRegisteredEventArgs e)
     {
-        message = e.FingerPrint;
-        toastService.ShowSuccess(e.FingerPrint);
-        //fpService.MatchFingerprint(fingerprintResult, new List<UserFp>());
-        Console.WriteLine($"Registration Success: {message}");
+        //message = e.FingerPrint;
+        toastService.ShowSuccess(e.Fid.ToString());
+        Console.WriteLine($"Registration Success: {e.Fid}");
     }
     public void Dispose()
     {
         fpService.Close();
         fpService.MessageChanged -= OnMessageChanged!;
+        fpService.FingerPrintRegistered -= OnRegistered!;
         fpService.SuccessIdentification -= OnIdentificationSuccess!;
     }
 }

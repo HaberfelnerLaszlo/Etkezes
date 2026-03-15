@@ -6,6 +6,8 @@
 @inject ILogger<FpRegistration> logger
 @inject IToastService toastService
 @implements IDisposable
+@if(isLogin)
+{
 <FluentStack Orientation="Orientation.Horizontal">
     <h3>Újjlenyomat Regisztráció</h3>
     <FluentSpacer />
@@ -47,16 +49,24 @@ else
 }
     <FluentButton Appearance="Appearance.Neutral" OnClick="() => RegisterFingerprint()" Disabled="@(!((fpIndex <= 2)&&(String.IsNullOrWhiteSpace(newUser.FingerPrint1) || String.IsNullOrWhiteSpace(newUser.FingerPrint2))))">@fpIndex . Ujjlenyomat Regisztráció</FluentButton>
     <FluentLabel Typo="Typography.H3" hidden="@String.IsNullOrEmpty(message)">@message</FluentLabel>
+}
+else
+{
+    <FluentLabel>Jelenleg nincs bejelentkezve felhasználó. Kérem jelentkezzen be egy fiókkal az ujjlenyomat regisztrációhoz.</FluentLabel>
+    <FluentButton Appearance="Appearance.Accent" OnClick="@(() => navigationManager.NavigateTo("/"))">Bejelentkezés</FluentButton>
 
+}
 
 @code {
     private User newUser = new User();
     IList<string> osztalyok = new List<string> { "5.a", "5.b", "5.c", "6.a", "6.b", "6.c", "7.a", "7.b", "7.c", "8.a", "8.b", "8.c", "9.a", "9.b", "10.a", "10.b", "11.a", "11.b", "12.a", "12.b", };
     int fpIndex = 1;
-    bool editUser = false;
+    bool editUser = false, isLogin = false;
     string message = string.Empty;
     protected override async Task OnInitializedAsync()
     {
+        dataService.DataServiceMessage += OnDataServiceMessage!;
+        isLogin = dataService.IsUserLogin();
         newUser = dataService.GetUser();
         if(newUser == null)
         {
@@ -66,6 +76,12 @@ else
         fpService.MessageChanged += OnMessageChanged!;
         fpService.FingerPrintRegistered += OnRegistationSuccess!;
 
+    }
+    private void OnDataServiceMessage(object sender, DataServiceMessageEventArgs e)
+    {
+            toastService.ShowWarning(e.Message);
+            logger.LogWarning($"DataService warning: {e.Message}");
+            Console.WriteLine($"Warning: {e.Message}");
     }
     private void OnMessageChanged(object sender, FPMessageChangedEventArgs e)
     {
@@ -108,6 +124,7 @@ else
         fpService.Close();
         fpService.MessageChanged -= OnMessageChanged!;
         fpService.FingerPrintRegistered -= OnRegistationSuccess!;
+        dataService.DataServiceMessage -= OnDataServiceMessage!;
     }
     private async Task RegisterFingerprint()
     {
@@ -126,6 +143,7 @@ else
             toastService.ShowError("Kérem regisztrálja az első ujjlenyomatot!");
             return;
         }
+        newUser.Updated=DateTime.Now;
         userService.UpdateUser(newUser);
         toastService.ShowSuccess("Felhasználó sikeresen frissítve!");
         Task.Delay(2000).ContinueWith(_ => navigationManager.NavigateTo("/"));
@@ -135,6 +153,7 @@ else
         var user = args.Model as User;
         if (user != null)
         {
+            user.Updated = DateTime.Now;
             userService.UpdateUser(user);
             toastService.ShowSuccess("Felhasználó sikeresen frissítve!");
             Task.Delay(2000).ContinueWith(_ => navigationManager.NavigateTo("/"));

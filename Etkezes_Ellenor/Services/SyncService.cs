@@ -36,9 +36,9 @@ namespace Etkezes_Ellenor.Services
             {
                 loginUserSyncDateUp = await dbContext.LoginUsers.MaxAsync(sd => sd.UpdatedAt);
             }
-            if(await dbContext.SyncDatas.AnyAsync(sd => sd.Type == SyncType.Up && sd.Table == "User"))
+            if(await dbContext.Users.AnyAsync())
             {
-                lastUserSyncDateUp = await dbContext.SyncDatas.Where(sd => sd.Type == SyncType.Up && sd.Table == "User").MaxAsync(sd => sd.SyncDate);
+                lastUserSyncDateUp = await dbContext.Users.MaxAsync(sd => sd.Updated);
             }
             if(await dbContext.SyncDatas.AnyAsync(sd => sd.Type == SyncType.Down && sd.Table == "LoginUser"))
             {
@@ -128,7 +128,12 @@ namespace Etkezes_Ellenor.Services
                 #region up
                 if (syncDates.LoginUserSyncDateUp < loginUserSyncDateUp)
                 {
-                    var loginUsersToSync = await dbContext.LoginUsers.Where(lu => lu.UpdatedAt > loginUserSyncDateUp).AsNoTracking().ToListAsync();
+                    var loginUsersToSync = await dbContext.LoginUsers.Where(lu => lu.UpdatedAt >= loginUserSyncDateUp).AsNoTracking().ToListAsync();
+                    if (loginUsersToSync.Count == 0)
+                    {
+                          logger.LogWarning("Nincs loginUser, ami szinkronizálható lenne a szerverre.");
+                          return false;
+                    }
                     if (await SyncLoginUserToServer(loginUsersToSync))
                     {
                         dbContext.SyncDatas.Add(new SyncData
@@ -156,7 +161,13 @@ namespace Etkezes_Ellenor.Services
                     }
                     if (syncDates.UserSyncDateUp < lastUserSyncDateUp)
                     {
-                        if (await SyncUserToServer(await dbContext.Users.Where(u => u.Updated > lastUserSyncDateUp).AsNoTracking().ToListAsync()))
+                            var usersToSync = await dbContext.Users.Where(u => u.Updated >= lastUserSyncDateUp).AsNoTracking().ToListAsync();
+                            if (usersToSync.Count == 0)
+                            {
+                                logger.LogWarning("Nincs user, ami szinkronizálható lenne a szerverre.");
+                                return false;
+                            }
+                        if (await SyncUserToServer(await dbContext.Users.Where(u => u.Updated >= lastUserSyncDateUp).AsNoTracking().ToListAsync()))
                         {
                             dbContext.SyncDatas.Add(new SyncData
                             {
@@ -241,7 +252,7 @@ namespace Etkezes_Ellenor.Services
             }
 
             }
-        internal async Task<bool> SyncLoginUserToServer(List<LoginUser> loginUsers)
+        internal async Task<bool>                                                                       SyncLoginUserToServer(List<LoginUser> loginUsers)
         {
             try
             {
