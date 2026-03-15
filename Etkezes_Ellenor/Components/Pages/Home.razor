@@ -178,22 +178,38 @@
     {
         if (loginService.HandleSuccessfulIdentification(e.Fid))
         {
-            // Handle successful login
-            identifiedUser = loginService.GetUserByFpId(e.Fid);
-            toastService.ShowSuccess($"Sikeres azonosítás! Üdvözlünk, {identifiedUser.Name}!"); //TODO: Personalizált üdvözlés a felhasználó nevével, belépés felajánlása
-            toastService.ShowCommunicationToast(new ToastParameters<CommunicationToastContent>()
+            if (identifiedUser == null)
             {
-                Intent = ToastIntent.Error,
-                Title = "Szeretne belépni?",
-                TopCTAType = ToastTopCTAType.Timestamp,
-                Timeout = 8000,
-                PrimaryAction = "Igen",
-                OnPrimaryAction = EventCallback.Factory.Create<ToastResult>(this, ()=> { dataService.SetLoginUser(identifiedUser); StateHasChanged(); }),
-                Content = new CommunicationToastContent()
+                // Handle successful login
+                identifiedUser = loginService.GetUserByFpId(e.Fid);
+                toastService.ShowSuccess($"Sikeres azonosítás! Üdvözlünk, {identifiedUser.Name}!"); //TODO: Personalizált üdvözlés a felhasználó nevével, belépés felajánlása
+                toastService.ShowCommunicationToast(new ToastParameters<CommunicationToastContent>()
                 {
-                    Details = "Szeretne belépni?",
-                },
-            });
+                    Intent = ToastIntent.Error,
+                    Title = "Szeretne belépni?",
+                    TopCTAType = ToastTopCTAType.Timestamp,
+                    Timeout = 8000,
+                    PrimaryAction = "Igen",
+                    OnPrimaryAction = EventCallback.Factory.Create<ToastResult>(this, () => { dataService.SetLoginUser(identifiedUser); StateHasChanged(); }),
+                    Content = new CommunicationToastContent()
+                    {
+                        Details = "Szeretne belépni?",
+                    },
+                });
+
+            }
+            else if (identifiedUser.FpId != e.Fid)
+            {
+                // Handle case where a different user is identified while someone is already logged in
+                toastService.ShowWarning($"Egy másik felhasználó azonosítva! Kérem {identifiedUser.Name} jelentkezzen ki először.");
+                return;
+            }
+            else
+            {
+                // Handle case where the same user is identified again (optional)
+                toastService.ShowInfo($"Már belépet {identifiedUser.Name}!");
+                return;
+            }
             logger.LogInformation($"User with FP ID {e.Fid} successfully identified.");
             return;
         }

@@ -83,7 +83,9 @@ namespace Etkezes_API.Services
                 {
                     Table = "LoginUser",
                     Type = SyncType.Up,
-                    SyncDate = DateTime.UtcNow
+                    IsSuccess = true,
+                    SyncDate = DateTime.UtcNow,
+                    Description = $"{loginUsersToUpdate.Count} LoginUser rekord szinkronizálva."
                 });
                 await context.SaveChangesAsync();
                 return loginUsersToUpdate;
@@ -92,6 +94,15 @@ namespace Etkezes_API.Services
             {
                 // Log the exception or handle it as needed   
                 ErrorMessage = ex.Message;
+                context.SyncDatas.Add(new SyncData
+                {
+                    Table = "LoginUser",
+                    Type = SyncType.Up,
+                    IsSuccess = false,
+                    SyncDate = DateTime.UtcNow,
+                    Description = $"Hiba történt a szinkronizálás során: {ex.Message}"
+                });
+                await context.SaveChangesAsync();
                 return null;
             }
         }
@@ -118,7 +129,9 @@ namespace Etkezes_API.Services
                 {
                     Table = "User",
                     Type = SyncType.Up,
-                    SyncDate = DateTime.UtcNow
+                    IsSuccess = true,
+                    SyncDate = DateTime.UtcNow,
+                    Description = $"{usersToUpdate.Count} User rekord szinkronizálva."
                 });
                 await context.SaveChangesAsync();
                 return usersToUpdate;
@@ -127,6 +140,14 @@ namespace Etkezes_API.Services
             {
                 // Log the exception or handle it as needed
                 ErrorMessage = ex.Message;
+                context.SyncDatas.Add(new SyncData
+                {
+                    Table = "User",
+                    Type = SyncType.Up,
+                    IsSuccess = false,
+                    SyncDate = DateTime.UtcNow,
+                    Description = $"Hiba történt a szinkronizálás során: {ex.Message}"
+                });
                 return null;
             }
         }
@@ -153,7 +174,9 @@ namespace Etkezes_API.Services
                 {
                     Table = "Etkezes",
                     Type = SyncType.Up,
-                    SyncDate = DateTime.UtcNow
+                    IsSuccess = true,
+                    SyncDate = DateTime.UtcNow,
+                    Description = $"{etkezesekToUpdate.Count} Etkezes rekord szinkronizálva."
                 });
                 await context.SaveChangesAsync();
                 return etkezesekToUpdate;
@@ -162,6 +185,14 @@ namespace Etkezes_API.Services
             {
                 // Log the exception or handle it as needed
                 ErrorMessage = ex.Message;
+                context.SyncDatas.Add(new SyncData
+                {
+                    Table = "Etkezes",
+                    Type = SyncType.Up,
+                    IsSuccess = false,
+                    SyncDate = DateTime.UtcNow,
+                    Description = $"Hiba történt a szinkronizálás során: {ex.Message}"
+                });
                 return null;
             }
         }
