@@ -41,7 +41,7 @@ namespace Etkezes_Ellenor.Services
                 if (response.IsSuccessStatusCode)
                 {
                     valasz = await response.Content.ReadAsStringAsync();
-                    if (!string.IsNullOrEmpty(valasz) && valasz.Contains("Message"))
+                    if (!string.IsNullOrEmpty(valasz) && valasz.Contains("Message", StringComparison.OrdinalIgnoreCase))
                     {
                         var deserilizeResponse = JsonConvert.DeserializeObject<MainResponse>(valasz);
                         if (deserilizeResponse != null)
@@ -57,7 +57,7 @@ namespace Etkezes_Ellenor.Services
                 else if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
                 {
                     valasz = await response.Content.ReadAsStringAsync();
-                    if (!string.IsNullOrEmpty(valasz) && valasz.Contains("Message"))
+                    if (!string.IsNullOrEmpty(valasz) && valasz.Contains("Message", StringComparison.OrdinalIgnoreCase))
                     {
                         var r = JsonConvert.DeserializeObject<MainResponse>(valasz);
                         if (r?.Success ?? false)
@@ -85,6 +85,14 @@ namespace Etkezes_Ellenor.Services
                 OnErrorMessage?.Invoke(this, new(e.StatusCode.ToString(), e.Message));
                 return default;
             }
+            catch (TaskCanceledException e)
+            {
+                //client.CancelPendingRequests();
+                //client.Dispose();
+                ErrorMessage = "Nem elérhető a szerver! Hibaüzenet: " + e.Message;
+                OnErrorMessage?.Invoke(this, new("408", e.Message));
+                return default;
+            }   
             catch (Exception e)
             {
                 client.CancelPendingRequests();
@@ -129,7 +137,7 @@ namespace Etkezes_Ellenor.Services
             else if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
             {
                 valasz = await response.Content.ReadAsStringAsync();
-                if (!string.IsNullOrEmpty(valasz) && valasz.Contains("Message"))
+                if (!string.IsNullOrEmpty(valasz) && valasz.Contains("Message", StringComparison.OrdinalIgnoreCase))
                 {
                     var r = JsonConvert.DeserializeObject<MainResponse>(valasz);
                     ErrorMessage = r?.Message ?? "Null eredmény lett a hiba üzenet";
@@ -163,7 +171,7 @@ namespace Etkezes_Ellenor.Services
             if (response.IsSuccessStatusCode)
             {
                 valasz = await response.Content.ReadAsStringAsync();
-                if (!string.IsNullOrEmpty(valasz) && valasz.Contains("Message"))
+                if (!string.IsNullOrEmpty(valasz) && valasz.Contains("Message", StringComparison.OrdinalIgnoreCase))
                 {
                     var deserilizeResponse = JsonConvert.DeserializeObject<MainResponse>(valasz);
                     if (deserilizeResponse != null)
@@ -179,7 +187,7 @@ namespace Etkezes_Ellenor.Services
             else if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
             {
                 valasz = await response.Content.ReadAsStringAsync();
-                if (!string.IsNullOrEmpty(valasz) && valasz.Contains("Message"))
+                if (!string.IsNullOrEmpty(valasz) && valasz.Contains("Message", StringComparison.OrdinalIgnoreCase))
                 {
                     var r = JsonConvert.DeserializeObject<MainResponse>(valasz);
                     ErrorMessage = r?.Message ?? "Null eredmény lett a hiba üzenet";
