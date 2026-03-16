@@ -116,10 +116,12 @@ namespace Etkezes_API.Services
                     var existingUser = await context.Users.FindAsync(user.Id);
                     if (existingUser == null)
                     {
+                        user.Uploaded = DateTime.UtcNow;
                         usersToUpdate.Add(context.Users.Add(user).Entity);
                     }
                     else
                     {
+                        user.Uploaded = DateTime.UtcNow;
                         context.Entry(existingUser).CurrentValues.SetValues(user);
                         usersToUpdate.Add(existingUser);
                     }
@@ -219,17 +221,17 @@ namespace Etkezes_API.Services
             if (await context.SyncDatas.AnyAsync(sd => sd.Type == SyncType.Down && sd.Table == "LoginUser" && sd.IsSuccess))
             {
                 var lastLoginUserSyncDateDown = await context.SyncDatas.Where(sd => sd.Type == SyncType.Down && sd.Table == "LoginUser" && sd.IsSuccess).MaxAsync(sd => sd.SyncDate);
-                lastLoginUserSyncDown = await context.LoginUsers.AnyAsync(lu=>lu.UpdatedAt>lastLoginUserSyncDateDown);
+                lastLoginUserSyncDown = await context.LoginUsers.AnyAsync(lu=>lu.UpdatedAt>=lastLoginUserSyncDateDown);
             }
             if (await context.SyncDatas.AnyAsync(sd => sd.Type == SyncType.Down && sd.Table == "User" && sd.IsSuccess))
             {
                 var lastUserSyncDateDown = await context.SyncDatas.Where(sd => sd.Type == SyncType.Down && sd.Table == "User" && sd.IsSuccess).MaxAsync(sd => sd.SyncDate);
-                lastUserSyncDown = await context.Users.AnyAsync(u => u.Updated > lastUserSyncDateDown);
+                lastUserSyncDown = await context.Users.AnyAsync(u => u.Updated >= lastUserSyncDateDown);
             }
             if (await context.SyncDatas.AnyAsync(sd => sd.Type == SyncType.Down && sd.Table == "Etkezes" && sd.IsSuccess))
             {
                 var lastEtkezesSyncDateDown = await context.SyncDatas.Where(sd => sd.Type == SyncType.Down && sd.Table == "Etkezes" && sd.IsSuccess).MaxAsync(sd => sd.SyncDate);
-                lastEtkezesSyncDown = await context.Etkezesek.AnyAsync(e => e.Updated > lastEtkezesSyncDateDown);
+                lastEtkezesSyncDown = await context.Etkezesek.AnyAsync(e => e.Updated >= lastEtkezesSyncDateDown);
             }
             return new SyncDatesView
             {

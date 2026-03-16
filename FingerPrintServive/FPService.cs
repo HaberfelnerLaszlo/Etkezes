@@ -349,9 +349,9 @@ namespace FingerPrintService
                 if (ret == zkfp.ZKFP_ERR_OK)
                 {
                     FingerPrintRegistered?.Invoke(this, new FPRegisteredEventArgs(fId, fingerPrintBase64));
-                    SuccessInfo = "Sikeres adatbázis regisztráció";
-                    MessageChanged?.Invoke(this, new FPMessageChangedEventArgs(SuccessInfo, false, SUCCESS_DB_ADD));
-                    //cbRegTmp = blob.Length;
+                    SuccessInfo = $"Sikeres adatbázis regisztráció FpId: {fId}";
+                    _logger.LogInformation(SuccessInfo, fId);
+                    //MessageChanged?.Invoke(this, new FPMessageChangedEventArgs(SuccessInfo, false, SUCCESS_DB_ADD));
                     if (fId < 1000)
                     {
                         iFid = fId + 1;

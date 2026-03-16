@@ -2,6 +2,8 @@
 
 using FingerPrintService;
 
+using Microsoft.FluentUI.AspNetCore.Components;
+
 namespace Etkezes_Ellenor.Services
 {
     public class BgService : IHostedLifecycleService ,IDisposable
@@ -9,11 +11,17 @@ namespace Etkezes_Ellenor.Services
         private readonly IFPService _fpService;
         private readonly SyncService _syncService;
         private readonly ILogger<BgService> _logger;
+        private readonly DataService _dataService;
+        private readonly UserService _userService;
+        private readonly IToastService _toastService;
 
-        public BgService(IFPService fpService,SyncService syncService, ILogger<BgService> logger)
+        public BgService(IFPService fpService,SyncService syncService,DataService dataService, UserService userService, IToastService toastService, ILogger<BgService> logger)
         {
             _fpService = fpService;
             _syncService = syncService;
+            _dataService = dataService;
+            _userService = userService;
+            _toastService = toastService;
             _logger = logger;
         }
         public async Task StartAsync(CancellationToken cancellationToken)
@@ -27,6 +35,14 @@ namespace Etkezes_Ellenor.Services
         {
             var message = _fpService.DeviceConnected() ? "Fingerprint device connected." : "Fingerprint device not connected.";
             _logger.LogInformation(message);
+            if (_fpService.ClearDb())
+            {
+                _dataService.LoginUsersLoad().Wait(cancellationToken);
+                _userService.UserLoading().Wait(cancellationToken);
+                _fpService.SwitchIdentifyMode(true);
+                _toastService.ShowSuccess("Azonosítás bekapcsolva.");
+            }
+            else _toastService.ShowError("Nem sikerült törölni az adatbázist, az azonosítás nem kapcsolható be!");
             return Task.CompletedTask;
         }
 

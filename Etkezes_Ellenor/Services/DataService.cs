@@ -7,12 +7,12 @@ namespace Etkezes_Ellenor.Services
     public class DataService(LoginUserService loginService, IFPService fPService)
     {
         private User _user = new();
-        private LoginUser _loginUser = new();
+        private LoginUser? _loginUser = null;
         public event EventHandler<DataServiceMessageEventArgs>? DataServiceMessage;
         public User GetUser() => _user;
         public void SetUser(User user) => _user = user;
-        public LoginUser GetLoginUser() => _loginUser;
-        public void SetLoginUser(LoginUser loginUser) => _loginUser = loginUser;
+        public LoginUser? GetLoginUser() => _loginUser;
+        public void SetLoginUser(LoginUser? loginUser) => _loginUser = loginUser;
         public IQueryable<User> GetUsers()
         {
             IList<User> users = [];

@@ -24,11 +24,14 @@
         @if (String.IsNullOrWhiteSpace(identifiedUser?.UserName) == false)
         {
             <FluentLabel>Azonosított felhasználó: @identifiedUser.Name</FluentLabel>
+            <FluentSpacer />
+            <FluentButton Appearance="Appearance.Lightweight" OnClick="@(() => dataService.SetLoginUser(null))">Kilépés</FluentButton>
         }
         else
         {
             <FluentButton Appearance="Appearance.Lightweight" OnClick="@(() => LoginPage())">Belépés</FluentButton>                    
         }
+        <FluentSpacer />
         @if (isDeviceConnected)
         {
             <FluentIcon Value="@(new Icons.Filled.Size20.DeviceMeetingRoom())" Color="Color.Neutral"/>
@@ -101,14 +104,14 @@
                 userService.AddUser(item);
             }
             //Todo: Ide teljesen más lesz!
-            if (fpService.ClearDb()) 
-            { 
-                await dataService.LoginUsersLoad();
-                await userService.UserLoading();
-                fpService.SwitchIdentifyMode(true);
-                errorMessage = "Azonosítás bekapcsolva.";
-            }
-            else toastService.ShowError("Nem sikerült törölni az adatbázist, az azonosítás nem kapcsolható be!");
+            // if (fpService.ClearDb()) 
+            // { 
+            //     await dataService.LoginUsersLoad();
+            //     await userService.UserLoading();
+            //     fpService.SwitchIdentifyMode(true);
+            //     errorMessage = "Azonosítás bekapcsolva.";
+            // }
+            // else toastService.ShowError("Nem sikerült törölni az adatbázist, az azonosítás nem kapcsolható be!");
             StateHasChanged();
         }
     }
