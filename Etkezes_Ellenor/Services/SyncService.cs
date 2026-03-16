@@ -128,7 +128,7 @@ namespace Etkezes_Ellenor.Services
                 #region up
                 if (syncDates.LoginUserSyncDateUp < loginUserSyncDateUp)
                 {
-                    var loginUsersToSync = await dbContext.LoginUsers.Where(lu => lu.UpdatedAt >= loginUserSyncDateUp).AsNoTracking().ToListAsync();
+                    var loginUsersToSync = await dbContext.LoginUsers.Where(lu => lu.UpdatedAt >= syncDates.LoginUserSyncDateUp).AsNoTracking().ToListAsync();
                     if (loginUsersToSync.Count == 0)
                     {
                           logger.LogWarning("Nincs loginUser, ami szinkronizálható lenne a szerverre.");
@@ -161,13 +161,13 @@ namespace Etkezes_Ellenor.Services
                     }
                     if (syncDates.UserSyncDateUp < lastUserSyncDateUp)
                     {
-                            var usersToSync = await dbContext.Users.Where(u => u.Updated >= lastUserSyncDateUp).AsNoTracking().ToListAsync();
+                            var usersToSync = await dbContext.Users.Where(u => u.Updated>= syncDates.UserSyncDateUp).AsNoTracking().ToListAsync();
                             if (usersToSync.Count == 0)
                             {
                                 logger.LogWarning("Nincs user, ami szinkronizálható lenne a szerverre.");
                                 return false;
                             }
-                        if (await SyncUserToServer(await dbContext.Users.Where(u => u.Updated >= lastUserSyncDateUp).AsNoTracking().ToListAsync()))
+                        if (await SyncUserToServer(usersToSync))
                         {
                             dbContext.SyncDatas.Add(new SyncData
                             {

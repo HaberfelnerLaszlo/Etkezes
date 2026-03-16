@@ -15,6 +15,7 @@
     <PropertyColumn Property="u => u.FpId" Title="Id" />
     <PropertyColumn Property="u => u.FingerPrint1" Title="1. Ujjlenyomat" />
     <PropertyColumn Property="u => u.FingerPrint2" Title="2. Ujjlenyomat" />
+    <PropertyColumn Property="u => u.Updated" Title="Frissítés" />
     <TemplateColumn Title="Műveletek">
         <FluentButton Appearance="Appearance.Accent" OnClick="@(() => EditUser(context))">Szerkesztés</FluentButton>
         <FluentButton Appearance="Appearance.Accent" OnClick="@(() => DeleteUser(context))">Törlés</FluentButton>

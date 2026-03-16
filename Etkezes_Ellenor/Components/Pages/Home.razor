@@ -181,7 +181,7 @@
     {
         if (loginService.HandleSuccessfulIdentification(e.Fid))
         {
-            if (identifiedUser == null)
+            if (identifiedUser == null|| String.IsNullOrWhiteSpace(identifiedUser.UserName))
             {
                 // Handle successful login
                 identifiedUser = loginService.GetUserByFpId(e.Fid);
