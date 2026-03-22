@@ -10,7 +10,7 @@ namespace Etkezes_API.Endpoints
         public static void MapUserEndpoints(this WebApplication app)
         {
             app.MapGet("/users", (UserService userService) => GetUsers(userService)).WithName("GetUsers");
-            app.MapGet("/users/{osztaly}", async (string osztaly, UserService userService) => GetUsersByOsztalyAsync(osztaly, userService));
+            app.MapGet("/users/{osztaly}", (string osztaly, UserService userService) => GetUsersByOsztalyAsync(osztaly, userService));
             app.MapGet("/user/{id}", (long id, UserService userService) => GetUserById(id, userService)).WithName("GetUserByIdAsync");
             app.MapGet("/user/update/{date}", (DateTime date, UserService userService) => GetUsersByUpDate(date, userService)).WithName("GetUserByUpDate");
             app.MapPost("/user", (UserService userService, User user) => CreateUser(userService, user)).WithName("CreateUserAsync");

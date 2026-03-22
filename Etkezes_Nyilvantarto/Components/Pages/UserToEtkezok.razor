@@ -1,0 +1,291 @@
+﻿@page "/userstoetkezo"
+@inject UserService userService
+@inject EtkezesService etkezesService
+@inject IDialogService dialogService
+@inject IToastService toastService
+@implements IDisposable
+
+<PageTitle>Diákok</PageTitle>
+<h3>UserPage</h3>
+ <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="20">
+    <SelectOsztaly OnSelectOsztaly="SelectOsztaly"></SelectOsztaly>
+    <FluentDatePicker @bind-Value="@datum" @bind-Value:after="OnDateChanged" Label="Dátum" DisabledDateFunc="@(date => date < DateTime.Today)"></FluentDatePicker>
+    <FluentSwitch @bind-Value="onlyEtkezok" Label="Csak étkezők?" @bind-Value:after="@(()=>LoadUsers())"></FluentSwitch>
+    <FluentCounterBadge Count="savedEtkezok.Count" BackgroundColor="@Color.Info" Color="Color.Fill" >
+    <FluentButton OnClick="@(async () => {await usersEtkezes!.Changing(); await SaveToEtkezes(savedEtkezok);})">Mentés</FluentButton>
+    </FluentCounterBadge>
+    @*<FluentButton OnClick="AddUsers">Diákok feltöltése</FluentButton>*@
+</FluentStack> 
+@if (userEtkezok.Count == 0)
+{
+    if(IsselectedOsztaly)
+    {
+        <p>Betöltés...</p>
+    }
+    else
+    {
+        <p>Válasz osztályt!</p>
+    }
+}
+else
+{
+    <UsersEtkezes @ref="usersEtkezes" Users="userEtkezok" Save="SaveToEtkezes" Delete="DeleteEtkezes" Changed="ChangedEtkezes" />
+}
+@code {
+    bool IsselectedOsztaly = false, onlyEtkezok =true;
+    List<UserEtkezoView> userEtkezok = new List<UserEtkezoView>();
+    List<UserEtkezoView> savedEtkezok = new List<UserEtkezoView>();
+    string selectedOsztaly = string.Empty;
+    DateTime? datum = DateTime.Today; 
+    List<string> kicsik = new List<string> { "5.a", "5.b", "5.c", "6.a", "6.b", "6.c", "7.a", "7.b", "7.c", "8.a", "8.b", "8.c", };
+    UsersEtkezes? usersEtkezes;
+    protected override void OnInitialized()
+    {
+        userService.OnMessageUserServiceEvent += OnMessageChange!;
+        base.OnInitialized();
+    }
+    private async void SelectOsztaly(string args)
+    {
+        IsselectedOsztaly = true;
+        selectedOsztaly = args;
+        LoadUsers();
+    }
+    private async void LoadUsers()
+    {
+        var users = await etkezesService.GetUsersByEtkezesekDateOsztaly(datum!.Value, selectedOsztaly);
+        if (users is null)
+        {
+            toastService.ShowError("Nem sikerült a diákokat lekérni az adatbázisból!");
+            return;
+        }
+        if (users.Count == 0)
+        {
+            toastService.ShowWarning("Nincs az osztálynak tanulója!");
+            return;
+        }
+        if (userEtkezok.Any(u => u.Darab > 0 && !u.IsSaved))
+        {
+            savedEtkezok.AddRange(userEtkezok.Where(u => u.Darab > 0 && !u.IsSaved).ToList());
+        }
+        userEtkezok.Clear();
+        if (onlyEtkezok)
+        {
+            foreach (var user in users.Where(u => u.Darab > 0))
+            {
+                UserEtkezoView userEtkezoView = new()
+                    {
+                        Id = user.Id,
+                        UserId = user.UserId,
+                        Name = user.Name,
+                        Osztaly = user.Osztaly,
+                        Date = user.Datum,
+                        Adag = kicsik.Contains(user.Osztaly) ? "kis adag" : "nagy adag",
+                        Menu = user.Menu,
+                        Darab = user.Darab,
+                        IsSelected = savedEtkezok.Any(u => u.UserId == user.UserId) ? true : false,
+                        IsSaved = user.Darab > 0 ? true : false,
+                    };
+                userEtkezok.Add(userEtkezoView);
+            }
+        }
+        else
+        {
+            foreach (var user in users)
+            {
+                UserEtkezoView userEtkezoView = new()
+                    {
+                        Id = user.Id,
+                        UserId = user.UserId,
+                        Name = user.Name,
+                        Osztaly = user.Osztaly,
+                        Date = user.Datum,
+                        Adag = kicsik.Contains(user.Osztaly) ? "kis adag" : "nagy adag",
+                        Menu = user.Menu,
+                        Darab = user.Darab,
+                        IsSelected = savedEtkezok.Any(u => u.UserId == user.UserId) ? true : false,
+                        IsSaved = user.Darab > 0 ? true : false,
+                    };
+                userEtkezok.Add(userEtkezoView);
+            }
+        }
+        StateHasChanged();
+    }
+    private async Task SaveToEtkezes(List<UserEtkezoView> args)
+    {
+        List<Etkezes> etkezesek = new();
+        List<Etkezes> updatedEtkezes = new();
+        foreach (var user in args.Where(u => u.Darab>0))
+        {
+            if(user.IsSaved)
+            {
+                Etkezes upetkezes = new()
+                {
+                    Id = user.Id,
+                    UserId = user.UserId,
+                    Menu = user.Menu,
+                    Darab = user.Darab,
+                    Adag = user.Adag,
+                    Datum = user.Date,
+                    Updated = DateTime.UtcNow,
+                    User = new User { Id=user.UserId, Name = user.Name, Osztaly = user.Osztaly },
+                };
+                updatedEtkezes.Add(upetkezes);
+                continue;
+            }
+            Etkezes etkezes = new()
+            {
+                UserId = user.UserId,
+                Menu = user.Menu,
+                Darab = user.Darab,
+                Adag = user.Adag,
+                Datum = user.Date,
+                Updated = DateTime.UtcNow,
+                User = new User { Id=user.UserId, Name = user.Name, Osztaly = user.Osztaly },
+            };
+            etkezesek.Add(etkezes);
+        }
+        savedEtkezok.Clear();
+        if (updatedEtkezes.Count > 0)
+        {
+            foreach (var etkezes in updatedEtkezes)
+            {
+                if (await etkezesService.UpdateEtkezes(etkezes) != null)
+                {
+                    toastService.ShowInfo($"{etkezes.User.Name} rendelése frissítve!");
+                }
+                else
+                {
+                    // savedEtkezok.Add(new UserEtkezoView
+                    // {
+                    //     Id = etkezes.Id,
+                    //     UserId = etkezes.UserId,
+                    //     Name = etkezes.User.Name,
+                    //     Osztaly = etkezes.User.Osztaly,
+                    //     Date = etkezes.Datum,
+                    //     Adag = etkezes.Adag,
+                    //     Darab = etkezes.Darab,
+                    //     IsSelected = true,
+                    //     IsSaved = true,
+                    // });
+                    toastService.ShowError($"Nem sikerült {etkezes.User.Name} rendelését frissíteni!");
+                }
+            }
+        }
+        if (await etkezesService.CreateEtkezesek(etkezesek) != null)
+        {
+            toastService.ShowInfo($"{etkezesek.Count} rendelés mentve!");
+            userEtkezok.FindAll(u => etkezesek.Any(e => e.UserId == u.UserId)).ForEach(u => u.IsSaved = true);
+        }
+        else
+        {
+            toastService.ShowError("Nem sikerült a rendeléseket menteni!");
+        }
+    }
+    // private void Saved(List<UserEtkezoView> args)
+    // {
+    //     if (userEtkezok.Any(u => u.Darab > 0 && !u.IsSaved))
+    //     {
+    //         savedEtkezok.AddRange(userEtkezok.Where(u => u.Darab > 0 && !u.IsSaved).ToList());
+    //     }
+    //     SaveToEtkezes(savedEtkezok);
+    // }
+    private void ChangedEtkezes(List<UserEtkezoView> args)
+    {
+        foreach (var edited in args)
+        {
+            if (savedEtkezok.Any(u => u.Id == edited.Id))
+            {
+                var user = savedEtkezok.First(u => u.Id == edited.Id);
+                user.IsSaved = true;
+                user.Menu = edited.Menu;
+                user.Adag = edited.Adag;
+                user.Darab = edited.Darab;
+            }
+            else{savedEtkezok.Add(edited);
+            }
+        }
+        StateHasChanged();
+    }
+    private async Task DeleteEtkezes(UserEtkezoView args)
+    {
+        await etkezesService.DeleteEtkezes(args.Id);
+    }
+    private void OnDateChanged()
+    {
+        LoadUsers();
+    }
+    // private async Task AddUser(MouseEventArgs args)
+    // {
+    //     User? user = new(){Osztaly="6.a"};
+    //     DialogParameters parameters = new()
+    //     {
+    //         Title = "Új diák felvétele",
+    //         TitleTypo = Typography.H2,
+    //         // PrimaryAction = "Yes",
+    //         // PrimaryActionEnabled = true,
+    //         // SecondaryAction = "No",
+    //         Width = "500px",
+    //         Modal = true,
+    //         PreventScroll = true
+    //     };
+
+    //     IDialogReference dialog = await dialogService.ShowDialogAsync<UserDialog>(user, parameters);
+    //     DialogResult? result = await dialog.Result;
+    //     try
+    //     {
+    //         if (result is not null && result.Data is not null)
+    //         {
+    //             user = await userService.CreateAsync((User)result.Data);
+    //             if(user is null)
+    //             {
+    //                 toastService.ShowError("Nem sikerült a diákot elmenteni az adatbázisba!");
+    //                 return;
+    //             }
+    //             userEtkezok.Add(user);
+    //         }
+    //     }
+    //     catch (Exception ex)
+    //     {
+    //         toastService.ShowError(ex.Message);
+    //     }
+    // }
+    // private async Task AddUsers(MouseEventArgs args)
+    // {
+    //     MemoryStream? stream = new();
+    //     DialogParameters parameters = new()
+    //     {
+    //         Width = "500px",
+    //         Modal = true,
+    //         PreventScroll = true
+    //     };
+
+    //     IDialogReference dialog = await dialogService.ShowDialogAsync<UploadDialog>(stream, parameters);
+    //     DialogResult? result = await dialog.Result;
+    //     try
+    //     {
+    //         if (result is not null && result.Data is not null)
+    //         {
+    //             stream = (MemoryStream)result.Data;
+    //             if(stream is null)
+    //             {
+    //                 toastService.ShowError("Nem sikerült a Fájl feltöltése!");
+    //                 return;
+    //             }
+
+    //         }
+    //     }
+    //     catch (Exception ex)
+    //     {
+    //         toastService.ShowError(ex.Message);
+    //     }
+    // }
+    void IDisposable.Dispose()
+    {
+        userService.OnMessageUserServiceEvent -= OnMessageChange!;
+    }
+
+    private void OnMessageChange(object sender, MessageUserServiceEventArg arg)
+    {
+        toastService.ShowError(arg.Message);
+    }
+}

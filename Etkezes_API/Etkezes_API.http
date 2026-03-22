@@ -18,3 +18,24 @@ Content-Type: application/json
  }]
 
 
+ ###
+@osztaly=5.b
+GET {{Etkezes_API_HostAddress}}/users/{{osztaly}}
+
+###
+GET {{Etkezes_API_HostAddress}}/users
+###
+POST {{Etkezes_API_HostAddress}}/etkezes
+content-type: application/json
+{
+    "datum":"2024-06-10",
+    "userId":10001,
+    "menu":"A",
+    "adag":"nagy adag",
+    "darab":1,
+    "elfogyasztva":false,
+    "user":{
+        "name":"admin",
+        "osztaly":"5.b"
+    }
+}

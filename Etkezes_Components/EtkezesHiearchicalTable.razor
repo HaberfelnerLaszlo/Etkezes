@@ -1,0 +1,119 @@
+﻿@inject IDialogService dialogService
+@using Microsoft.FluentUI.AspNetCore.Components
+
+<style>
+	:root {
+		--datagrid-hover-color: lightyellow;
+	}
+
+	.fluent-data-grid {
+		--fluent-data-grid-resize-handle-color: var(--neutral-stroke-rest) !important;
+		--fluent-data-grid-resize-handle-opacity: 1 !important;
+	}
+
+	td {
+		height: 38px !important
+	}
+</style>
+
+<FluentDataGrid Items="@items.Where(i => !i.IsHidden).AsQueryable()" ShowHover="true" ResizableColumns="true">
+	<TemplateColumn Title="Name" HierarchicalToggle="true">
+		@if (!string.IsNullOrEmpty(context.Item.Name))
+		{
+			@context.Item.Name
+		}
+	</TemplateColumn>
+	<PropertyColumn Title="Darab" Property="@(i => i.Item.Darab)" />
+	<PropertyColumn Title="Datum" Property="@(i => i.Item.Datum)" />
+	<PropertyColumn Title="Adag" Property="@(i => i.Item.Adag)" />
+	<PropertyColumn Title="Elfogyasztva" Property="@(i => i.Item.Elfogyasztva)" />
+	<TemplateColumn Title="Műveletek">
+        <FluentButton Appearance="Appearance.Accent" OnClick="@(() => EditEtkezes(context.Item))" hidden="@(context.Depth == 0)">Szerkesztés</FluentButton>
+        <FluentButton Appearance="Appearance.Accent" OnClick="@(() => Delete.InvokeAsync(context.Item.Id))" hidden="@(context.Depth == 0)">Törlés</FluentButton>
+	</TemplateColumn>
+
+</FluentDataGrid>
+
+@code {
+	[Parameter]
+	public List<EtkezesView> Etkezesek { get; set; } = new List<EtkezesView>();
+	[Parameter]
+	public EventCallback<Etkezes> Update { get; set; }
+	[Parameter]
+	public EventCallback<int> Delete { get; set; }
+
+
+	List<EtkezesGridItem> items = new();
+
+	protected override void OnInitialized()
+	{
+		foreach (var etkezes in Etkezesek.DistinctBy(e => e.UserId))
+		{
+			var userEtkezesek = Etkezesek.Where(e => e.UserId == etkezes.UserId).OrderByDescending(e=>e.Datum).AsQueryable();
+
+			var userItem = new EtkezesGridItem
+			{
+				Item = etkezes with
+				{
+                    Datum = userEtkezesek.Max(e => e.Datum),
+					Darab = userEtkezesek.Sum(e=>e.Darab),
+                    Elfogyasztva = userEtkezesek.Count(e => e.Elfogyasztva) > 0
+				},
+				IsCollapsed = true
+			};
+
+			items.Add(userItem);
+
+			foreach (var userEtkezes in userEtkezesek)
+			{
+				var etkezesItem = new EtkezesGridItem
+				{
+					Item = userEtkezes,
+					Depth = 1,
+					IsHidden = true
+				};
+				userItem.Children.Add(etkezesItem);
+				items.Add(etkezesItem);
+			}
+		}
+	}
+	private async void EditEtkezes(EtkezesView etkezes)
+	{
+		DialogParameters parameters = new()
+		{
+			Title = $"{etkezes.Name} adatai",
+			TitleTypo = Typography.H4,
+			Width = "500px",
+			Modal = true,
+			PreventScroll = true
+		};
+
+		IDialogReference dialog = await dialogService.ShowDialogAsync<EtkezesDialog>(etkezes, parameters);
+		DialogResult? result = await dialog.Result;
+
+		if (result.Data is not null)
+		{
+			var etkezesView = (EtkezesView)result.Data;
+			Etkezes updatedEtkezes = new Etkezes
+			{
+				Id = etkezesView.Id,
+				UserId = etkezesView.UserId,
+				Datum = etkezesView.Datum,
+				Menu = etkezesView.Menu,
+				Adag = etkezesView.Adag,
+				Darab = etkezesView.Darab,
+				User = new User
+				{
+					Id = etkezesView.UserId,
+					Name = etkezesView.Name,
+					Osztaly = etkezesView.Osztaly
+				}
+			};
+			await Update.InvokeAsync(updatedEtkezes);
+		}
+	}
+
+	public class EtkezesGridItem : HierarchicalGridItem<EtkezesView, EtkezesGridItem>
+	{
+	}
+}

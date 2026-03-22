@@ -5,7 +5,7 @@ using System.Text;
 
 namespace Etkezes_Models.ViewModels
 {
-    public class EtkezesView
+    public record EtkezesView
     {
        public int Id { get; set; }
         [Required]

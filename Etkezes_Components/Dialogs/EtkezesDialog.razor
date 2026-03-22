@@ -1,18 +1,21 @@
-﻿@implements IDialogContentComponent<Etkezes>
+﻿@implements IDialogContentComponent<EtkezesView>
 @inject IToastService toastService
 <FluentDialogHeader>
-    <h4>@Content.User.Name rendelése:</h4>
+    <h4>@Content.Name rendelése:</h4>
     <FluentSpacer/>
     <FluentLabel>Dátum: @Content.Datum.ToString("yyyy-MM-dd")</FluentLabel>
 </FluentDialogHeader>
 <FluentDialogBody>
+    <FluentEditForm Model="@Content">
     <FluentStack Orientation="Orientation.Vertical" VerticalAlignment="VerticalAlignment.Center" VerticalGap="20">
         @* <FluentTextField Placeholder="Adag" Value="@Content.Adag" AriaLabel="Adag" Label="Adag:"/>
         <FluentTextField Placeholder="Menü" Value="@Content.Menu" AriaLabel="Menü" Label="Menü:" /> *@
-        <FluentSelect TOption="string" Items="@(["kis adag", "nagy adag"])" Value="@Content.Adag" AriaLabel="Adag" Label="Adag:" />
-        <FluentSelect TOption="string" Items="@(["A", "B"])" Value="@Content.Menu" AriaLabel="Menü" Label="Menü:" />
-        <FluentNumberField Value="Content.Darab" Label="Étel darabszám:" />
+        <FluentSelect TOption="string" Items="@(["kis adag", "nagy adag"])" @bind-Value="@Content.Adag" AriaLabel="Adag" Label="Adag:" />
+        <FluentSelect TOption="string" Items="@(["A", "B"])" @bind-Value="@Content.Menu" AriaLabel="Menü" Label="Menü:" Placeholder="Válasszon menüt" />
+        <FluentNumberField @bind-Value="Content.Darab" Label="Étel darabszám:" />
     </FluentStack>
+        @* <FluentButton Type="ButtonType.Submit">Mentés</FluentButton> *@
+    </FluentEditForm>
 </FluentDialogBody>
 <FluentDialogFooter>
     <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="10">
@@ -23,7 +26,7 @@
 
 @code {
     [Parameter]
-    public Etkezes Content { get; set; } = default!;
+    public EtkezesView Content { get; set; } = default!;
     [CascadingParameter]
     public FluentDialog Dialog { get; set; } = default!;
 

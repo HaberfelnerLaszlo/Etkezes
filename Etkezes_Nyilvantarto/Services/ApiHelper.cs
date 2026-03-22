@@ -14,7 +14,7 @@ namespace Etkezes_Nyilvantarto.Services
         //private static readonly string[] scopes = ["api://6091ad40-f274-4e3a-813b-a9498817fd69/access_as_user"];
 
         //protected static string URI = "http://localhost:7025/";
-        protected static string URI = "https://localhost:44308/"; //ISS
+        protected static string URI = "http://192.168.10.66:5000/"; //ISS
         //private string? _token;
         //private readonly DateTime _tokenExpiration;
         //private async Task CreateAuthorizationHeaderForUserAsync()
@@ -41,7 +41,7 @@ namespace Etkezes_Nyilvantarto.Services
                 if (response.IsSuccessStatusCode)
                 {
                     valasz = await response.Content.ReadAsStringAsync();
-                    if (!string.IsNullOrEmpty(valasz) && valasz.Contains("Message"))
+                    if (!string.IsNullOrEmpty(valasz) && valasz.Contains("Message", StringComparison.OrdinalIgnoreCase))
                     {
                         var deserilizeResponse = JsonConvert.DeserializeObject<MainResponse>(valasz);
                         if (deserilizeResponse != null)
@@ -57,7 +57,7 @@ namespace Etkezes_Nyilvantarto.Services
                 else if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
                 {
                     valasz = await response.Content.ReadAsStringAsync();
-                    if (!string.IsNullOrEmpty(valasz) && valasz.Contains("Message"))
+                    if (!string.IsNullOrEmpty(valasz) && valasz.Contains("Message", StringComparison.OrdinalIgnoreCase))
                     {
                         var r = JsonConvert.DeserializeObject<MainResponse>(valasz);
                         if (r?.Success ?? false)
@@ -113,7 +113,7 @@ namespace Etkezes_Nyilvantarto.Services
             if (response.IsSuccessStatusCode)
             {
                 valasz = await response.Content.ReadAsStringAsync();
-                if (!string.IsNullOrEmpty(valasz) && valasz.Contains("Message"))
+                if (!string.IsNullOrEmpty(valasz) && valasz.Contains("Message", StringComparison.OrdinalIgnoreCase))
                 {
                     var deserilizeResponse = JsonConvert.DeserializeObject<MainResponse>(valasz);
                     if (deserilizeResponse != null)
@@ -129,7 +129,7 @@ namespace Etkezes_Nyilvantarto.Services
             else if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
             {
                 valasz = await response.Content.ReadAsStringAsync();
-                if (!string.IsNullOrEmpty(valasz) && valasz.Contains("Message"))
+                if (!string.IsNullOrEmpty(valasz) && valasz.Contains("Message", StringComparison.OrdinalIgnoreCase))
                 {
                     var r = JsonConvert.DeserializeObject<MainResponse>(valasz);
                     ErrorMessage = r?.Message ?? "Null eredmény lett a hiba üzenet";
@@ -163,7 +163,7 @@ namespace Etkezes_Nyilvantarto.Services
             if (response.IsSuccessStatusCode)
             {
                 valasz = await response.Content.ReadAsStringAsync();
-                if (!string.IsNullOrEmpty(valasz) && valasz.Contains("Message"))
+                if (!string.IsNullOrEmpty(valasz) && valasz.Contains("Message", StringComparison.OrdinalIgnoreCase))
                 {
                     var deserilizeResponse = JsonConvert.DeserializeObject<MainResponse>(valasz);
                     if (deserilizeResponse != null)
@@ -179,7 +179,7 @@ namespace Etkezes_Nyilvantarto.Services
             else if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
             {
                 valasz = await response.Content.ReadAsStringAsync();
-                if (!string.IsNullOrEmpty(valasz) && valasz.Contains("Message"))
+                if (!string.IsNullOrEmpty(valasz) && valasz.Contains("Message", StringComparison.OrdinalIgnoreCase))
                 {
                     var r = JsonConvert.DeserializeObject<MainResponse>(valasz);
                     ErrorMessage = r?.Message ?? "Null eredmény lett a hiba üzenet";

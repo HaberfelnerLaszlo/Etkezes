@@ -6,8 +6,8 @@
 <FluentDialogBody>
     <FluentStack Orientation="Orientation.Vertical" VerticalAlignment="VerticalAlignment.Center" VerticalGap="20">
         <FluentLabel>Felhasználónév</FluentLabel>
-        <FluentTextField Placeholder="Felhasználónév" Value="@Content.UserName"/>
-        <FluentTextField TextFieldType="TextFieldType.Password" Placeholder="Jelszó" Value="@Content.Password"/>
+        <FluentTextField Placeholder="Felhasználónév" @bind-Value="@Content.UserName"/>
+        <FluentTextField TextFieldType="TextFieldType.Password" Placeholder="Jelszó" @bind-Value="@Content.Password"/>
     </FluentStack>
 </FluentDialogBody>
 <FluentDialogFooter>

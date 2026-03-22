@@ -35,13 +35,23 @@ namespace Etkezes_Nyilvantarto.Services
             }
             return etkezesek;
         }
-        public async Task<List<Etkezes>> GetEtkezesekByOsztaly(string osztaly)
+        public async Task<List<EtkezesView>> GetUsersByEtkezesekDateOsztaly(DateTime date, string osztaly)
         {
-            var etkezesek = await api.Get<List<Etkezes>>($"/etkezesek/osztaly/{osztaly}");
+            var etkezesek = await api.Get<List<EtkezesView>>($"/etkezesek/{date:yyyy-MM-dd}/{osztaly}");
+            if (etkezesek == null)
+            {
+                OnMessage?.Invoke(this, new OnMessageEtkezesEventArgs("Nincsenek étkezések a megadott dátumra!"));
+                return new ();
+            }
+            return etkezesek;
+        }
+        public async Task<List<EtkezesView>> GetEtkezesekByOsztaly(string osztaly)
+        {
+            var etkezesek = await api.Get<List<EtkezesView>>($"/etkezesek/osztaly/{osztaly}");
             if (etkezesek == null)
             {
                 OnMessage?.Invoke(this, new OnMessageEtkezesEventArgs("Nincsenek étkezések a megadott osztályra!"));
-                return new List<Etkezes>();
+                return new List<EtkezesView>();
             }
             return etkezesek;
         }
@@ -63,6 +73,26 @@ namespace Etkezes_Nyilvantarto.Services
                 return null;
             }
             return createdEtkezes;
+        }
+        public async Task<List<Etkezes>?> CreateEtkezesek(List<Etkezes> etkezesek)
+        {
+            try
+            {
+                foreach (var etkezes in etkezesek)
+                {
+                    var createdEtkezes = await api.Post("/etkezes", etkezes);
+                    if (createdEtkezes == null) {
+                        OnMessage?.Invoke(this, new OnMessageEtkezesEventArgs("Az étkezés létrehozása sikertelen!"));
+                        return null;
+                    }
+                }
+                return etkezesek;
+            }
+            catch (Exception ex)
+            {
+                OnMessage.Invoke(this, new OnMessageEtkezesEventArgs(ex.Message));
+                return null;
+            }
         }
         public async Task<Etkezes?> UpdateEtkezes(Etkezes etkezes)
         {

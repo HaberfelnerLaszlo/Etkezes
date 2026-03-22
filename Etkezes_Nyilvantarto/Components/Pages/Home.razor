@@ -10,3 +10,15 @@
         <FluentLabel>Diákok</FluentLabel>
     </ChildContent>
 </FluentButton>
+<FluentButton OnClick="@(() => navi.NavigateTo("/userstoetkezo"))" Style="width:150px; height:150px">
+<ChildContent>
+    <FluentEmoji Value="@(new Emojis.PeopleBody.Color.Light.Cook())" Width="128px" />
+    <FluentLabel>Étkezők</FluentLabel>
+</ChildContent>
+</FluentButton>
+<FluentButton OnClick="@(() => navi.NavigateTo("/etkezo"))" Style="width:150px; height:150px">
+<ChildContent>
+    <FluentEmoji Value="@(new Emojis.PeopleBody.Color.Light.WomanGesturingNo())" Width="128px" />
+    <FluentLabel>Étkezések</FluentLabel>
+</ChildContent>
+</FluentButton>

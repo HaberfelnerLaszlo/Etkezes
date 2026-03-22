@@ -1,0 +1,95 @@
+@inject IDialogService dialogService
+
+<FluentStack Orientation="Orientation.Horizontal" HorizontalGap="20">
+    <FluentButton OnClick="@(() => Users.ForEach(u => u.IsSelected = true))">Mindenki</FluentButton>
+    <FluentButton OnClick="@(() => Users.ForEach(u => u.IsSelected = false))">Senki</FluentButton>
+    <FluentButton OnClick="@(() => Users.ForEach(u => u.IsSelected = !u.IsSelected))">Fordítva</FluentButton>
+</FluentStack>
+<FluentDivider></FluentDivider>
+<FluentDataGrid TGridItem="UserEtkezoView" Items="Users.AsQueryable()">
+    <TemplateColumn Title="Kiválasztva?">
+        <FluentCheckbox @bind-Value="context.IsSelected"/>
+    </TemplateColumn>
+    <PropertyColumn Property="u => u.UserId" Title="Id" />
+    <PropertyColumn Property="u => u.Name" Title="Név" />
+    <PropertyColumn Property="u => u.Osztaly" Title="Osztály" />
+    <PropertyColumn Property="u => u.Adag" Title="Adag" />
+    <PropertyColumn Property="u => u.Menu" Title="Menü" />
+    <PropertyColumn Property="u => u.Darab" Title="Darab" />
+     <TemplateColumn Title="Mûveletek">
+        <FluentButton Appearance="Appearance.Accent" OnClick="@(() => EditUser(context))" IconStart="@(new Icons.Regular.Size28.Edit())"/>
+        <FluentButton Appearance="Appearance.Accent" OnClick="@(() => 
+DeleteEtkezes(context))" IconStart="@(new Icons.Regular.Size20.Delete())"/>
+    </TemplateColumn>
+</FluentDataGrid>
+<FluentDivider></FluentDivider>
+<FluentStack Orientation="Orientation.Horizontal" HorizontalGap="20">
+    <FluentButton OnClick="@(async () => {Users.Where (u => u.IsSelected).ToList().ForEach(u => {u.Menu = "A";u.Darab = 1;}); await Changing();})"> A menü</FluentButton>
+    <FluentButton OnClick="@(async () => {Users.Where (u => u.IsSelected).ToList().ForEach(u => {u.Menu = "B";u.Darab = 1;}); await Changing();})"> B menü</FluentButton>
+    <FluentButton OnClick="@(async () => {Users.Where (u => u.IsSelected).ToList().ForEach(u => u.Adag = "kis adag"); await Changing();})"> Kis adag</FluentButton>
+    <FluentButton OnClick="@(async () => {Users.Where (u => u.IsSelected).ToList().ForEach(u => u.Adag = "nagy adag"); await Changing();})"> Nagy adag</FluentButton>
+    @* <FluentButton OnClick="@(async () => await Saving())">Mentés</FluentButton> *@
+</FluentStack>
+@code{
+    [Parameter]
+    public List<UserEtkezoView> Users { get; set; } = new();
+    [Parameter]
+    public EventCallback<List<UserEtkezoView>> Save { get; set; }
+    [Parameter]
+    public EventCallback<List<UserEtkezoView>> Changed { get; set; }
+    [Parameter]
+    public EventCallback<UserEtkezoView> Delete { get; set; }
+    List<UserEtkezoView> EditedUsers = new();
+
+    public async Task Changing()
+    {
+        EditedUsers.AddRange(Users.Where(u => u.Darab > 0 && !u.IsSaved).ToList());
+    }
+    private async void EditUser(UserEtkezoView user)
+    {
+        EtkezesView etkezesView = new()
+        {
+            UserId = user.UserId,
+            Menu = user.Menu,
+            Darab = user.Darab
+        };
+        DialogParameters parameters = new()
+        {
+            Title = $"{user.Name} adatai",
+            TitleTypo = Typography.H4,
+            Width = "500px",
+            Modal = true,
+            PreventScroll = true
+        };
+
+        IDialogReference dialog = await dialogService.ShowDialogAsync<EtkezesDialog>(etkezesView, parameters);
+        DialogResult? result = await dialog.Result;
+
+        if (result.Data is not null)
+        {
+            var updatedEtkezesView = (EtkezesView)result.Data;
+            var updatingUser = Users.Find(u => u.UserId == updatedEtkezesView.UserId);
+            if (updatingUser != null)
+            {
+                updatingUser.Adag = updatedEtkezesView.Adag;
+                updatingUser.Menu = updatedEtkezesView.Menu;
+                updatingUser.Darab = updatedEtkezesView.Darab;
+                EditedUsers.Add(updatingUser);
+            }
+            await Changed.InvokeAsync(EditedUsers);
+        }
+    }
+    private void DeleteEtkezes(UserEtkezoView user)
+    {
+        if (user.IsSaved)
+        {
+            Delete.InvokeAsync(user);
+        }
+        else
+        {
+            user.Menu = string.Empty;
+            user.Darab = 0;
+        }
+        StateHasChanged();
+    }
+}

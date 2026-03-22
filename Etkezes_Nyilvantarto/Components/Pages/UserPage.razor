@@ -24,11 +24,11 @@
 }
 else
 {
-    @* <UsersTable Users="users"/> *@
+    <UsersTable Users="users"/>
 }
 @code {
     bool IsselectedOsztaly = false;
-    IList<User> users = new List<User>();
+    List<User> users = new List<User>();
     protected override void OnInitialized()
     {
         userService.OnMessageUserServiceEvent += OnMessageChange!;
@@ -38,6 +38,7 @@ else
     {
         IsselectedOsztaly = true;
         users = await userService.GetUsersByOsztaly(args);
+        StateHasChanged();
     }
     private async Task AddUser(MouseEventArgs args)
     {

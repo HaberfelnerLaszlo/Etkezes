@@ -3,8 +3,6 @@
 using Etkezes_Models;
 using Etkezes_Models.ViewModels;
 
-using MySqlX.XDevAPI.Common;
-
 namespace Etkezes_API.Endpoints
 {
     public static class EtkezesEndpoint
@@ -16,9 +14,48 @@ namespace Etkezes_API.Endpoints
             app.MapGet("/etkezesek/{date}", async (DateTime date, EtkezesService etkezesService) => await GetEtkezesByDate(date, etkezesService)).WithName("GetEtkezesByDate");
             app.MapGet("/etkezesek/osztaly/{osztaly}", async (string osztaly, EtkezesService etkezesService) => await GetEtkezesByOsztaly(osztaly, etkezesService)).WithName("GetEtkezesByOsztaly");
             app.MapGet("/etkezesek/{date}/osztaly/{osztaly}", async (DateTime date, string osztaly, EtkezesService etkezesService) => await GetEtkezesByDateByOsztaly(date, osztaly, etkezesService)).WithName("GetEtkezesByDateByOsztaly");
-            app.MapPost("/etkezes",async (Etkezes etkezes, EtkezesService etkezesService) => await AddEtkezes(etkezes, etkezesService));
+            app.MapGet("/etkezesek/{date}/{osztaly}", async (DateTime date, string osztaly, EtkezesService etkezesService, UserService userService) => await GetUsersByEtkezesDateOsztaly(date, osztaly, etkezesService, userService));
+            app.MapPost("/etkezes",async (Etkezes etkezes, EtkezesService etkezesService,UserService userService) => await AddEtkezes(etkezes, etkezesService, userService));
             app.MapPut("etkezes/{id}",async (int id, Etkezes etkezes, EtkezesService etkezesService) => await UpdateEtkezes(id, etkezes, etkezesService));
             app.MapDelete("/etkezes/{id}",async (int id, EtkezesService etkezesService)=>await DeleteEtkezes(id, etkezesService));
+        }
+
+        private static async Task<IResult> GetUsersByEtkezesDateOsztaly(DateTime date, string osztaly, EtkezesService etkezesService, UserService userService)
+        {
+            response.Clear();
+            List<EtkezesView> etkezokViews = new List<EtkezesView>();
+            var users = await userService.GetUsersByOsztalyAsync(osztaly);
+            var etkezesek = await etkezesService.GetEtkezesByDateByOsztaly(date, osztaly);
+            foreach (var user in users)
+            {
+                if (etkezesek.Any(e => e.UserId == user.Id && e.Datum == date))
+                {
+                   etkezokViews.Add(etkezesek.Find(e=>e.UserId==user.Id && e.Datum == date)!);
+                }
+                else
+                {
+                    etkezokViews.Add(new EtkezesView
+                    {
+                        UserId = user.Id,
+                        Name = user.Name,
+                        Osztaly = user.Osztaly,
+                        Datum = date,
+                        Menu = string.Empty,
+                        Adag = string.Empty,
+                        Darab = 0 ,
+                        Elfogyasztva = false
+                    });
+                }
+            }
+            if (etkezokViews == null || etkezokViews.Count == 0)
+            {
+                response.Success = false;
+                response.Message = etkezesService.ErrorMessage;
+                return await Task.FromResult(Results.NotFound(response));
+            }
+            response.Success = true;
+            response.Data = etkezokViews;
+            return await Task.FromResult(Results.Ok(response));
         }
 
         private static async Task<IResult> GetEtkezesByOsztaly(string osztaly, EtkezesService etkezesService)
@@ -90,9 +127,17 @@ namespace Etkezes_API.Endpoints
            response.Data = etkezokViews;
             return await Task.FromResult(Results.Ok(response));
         }
-        private static async Task<IResult> AddEtkezes(Etkezes etkezes, EtkezesService service)
+        private static async Task<IResult> AddEtkezes(Etkezes etkezes, EtkezesService service, UserService userService)
         {
             response.Clear();
+            var user = await userService.GetUserByIdAsync(etkezes.UserId);
+            if (user == null)
+            {
+                response.Success = false;
+                response.Message = $"Nincs ilyen id-val rendelkező felhasználó: {etkezes.UserId}";
+                return await Task.FromResult(Results.BadRequest(response));
+            }
+            etkezes.User = user;
             if (await service.Create(etkezes))
             {
                 response.Success = true;

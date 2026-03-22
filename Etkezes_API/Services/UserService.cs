@@ -6,37 +6,42 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Etkezes_API.Services
 {
-    public class UserService
+    public class UserService(EtkezesDbContext context, ILogger<UserService> logger)
     {
-        public UserService(EtkezesDbContext context)
-        {
-            _context = context;
-        }
-
-        private readonly EtkezesDbContext _context;
         public string ErrorMessage { get; private set; } = string.Empty;
         public async Task<List<string>> GetAllUsersAsync()
         {
-            return await _context.Users.Select(u => u.Name).AsNoTracking().ToListAsync();
+            return await context.Users.Select(u => u.Name).AsNoTracking().ToListAsync();
         }
         public async Task<User?> GetUserByIdAsync(long id)
         {
-            return await _context.Users.FindAsync(id);
+            return await context.Users.FindAsync(id);
         }
         public async Task<List<User>> GetUsersByUpDateAsync(DateTime date)
         {
-            return await _context.Users.Where(u => u.Updated > date).AsNoTracking().ToListAsync();
+            return await context.Users.Where(u => u.Updated > date).AsNoTracking().ToListAsync();
         }
         public async Task<List<User>> GetUsersByOsztalyAsync(string osztaly)
         {
-            return await _context.Users.Where(u=>u.Osztaly==osztaly).AsNoTracking().ToListAsync();
+            try
+            {
+                var users = await context.Users.Where(u => u.Osztaly == osztaly).AsNoTracking().ToListAsync();
+                return users;
+                //return await context.Users.Where(u=>u.Osztaly==osztaly).AsNoTracking().ToListAsync();
+
+            }
+            catch (Exception e)
+            {
+                logger.LogError(e, $"Error fetching users by osztaly: {osztaly}");
+                throw;
+            }
         }
         public async Task<bool> CreateUserAsync(User user)
         {
             try
             {
-                _context.Users.Add(user);
-                await _context.SaveChangesAsync();
+                context.Users.Add(user);
+                await context.SaveChangesAsync();
                 return true;
             }
             catch (Exception ex)
@@ -50,7 +55,7 @@ namespace Etkezes_API.Services
         {
             try
             {
-                var existingUser = await _context.Users.FindAsync(id);
+                var existingUser = await context.Users.FindAsync(id);
                 if (existingUser == null)
                 {
                     ErrorMessage = "User not found.";
@@ -64,7 +69,7 @@ namespace Etkezes_API.Services
                 existingUser.Etkezik = user.Etkezik;
                 existingUser.Updated = DateTime.Now;
                 existingUser.Uploaded = user.Uploaded;
-                await _context.SaveChangesAsync();
+                await context.SaveChangesAsync();
                 return true;
             }
             catch (Exception ex)
@@ -78,7 +83,7 @@ namespace Etkezes_API.Services
         {
             try
             {
-                await _context.Users.Where(u => u.Id == id).ExecuteDeleteAsync();
+                await context.Users.Where(u => u.Id == id).ExecuteDeleteAsync();
             }
             catch (Exception ex)
             {

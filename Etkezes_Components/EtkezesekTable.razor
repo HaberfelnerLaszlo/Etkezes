@@ -1,32 +1,38 @@
 ﻿@inject IDialogService dialogService
-<FluentDataGrid TGridItem="Etkezes" Items="@Etkezesek.AsQueryable()">
-    <PropertyColumn Property="e=>e.UserId" Title="Id" />
-    <PropertyColumn Property="e => e.User.Name" Title="Név" />
-    <PropertyColumn Property="e => e.User.Osztaly" Title="Osztály" />
-    <PropertyColumn Property="e=>e.Datum" Title="Nap" />
-    <PropertyColumn Property="e=>e.Menu" Title="Étel" />
-    <PropertyColumn Property="e=>e.Adag" Title="Adag" />
-    <PropertyColumn Property="e => e.Darab" Title="Darab" />
-    <TemplateColumn Title="Műveletek">
-        <FluentButton Appearance="Appearance.Accent" OnClick="@(() => EditEtkezes(context))">Szerkesztés</FluentButton>
-        <FluentButton Appearance="Appearance.Accent" OnClick="@(() => Delete.InvokeAsync(context.Id))">Törlés</FluentButton>
-    </TemplateColumn>
+<FluentAccordion ExpandMode="AccordionExpandMode.Single">
+@foreach (var etkezes in Etkezesek.DistinctBy(e => e.UserId))
+{
+    var userEtkezesek = Etkezesek.Where(e => e.UserId == etkezes.UserId).OrderByDescending(e => e.Datum).AsQueryable();
+    <FluentAccordionItem Heading="@($"{etkezes.Name} ({etkezes.Osztaly}) Összesen: {userEtkezesek.Count()} étkezés ebből nem fogyasztott: {userEtkezesek.Count(e => !e.Elfogyasztva)} db")">
+        <FluentDataGrid TGridItem="EtkezesView" Items="@userEtkezesek">
+            <PropertyColumn Property="e=>e.Datum.ToShortDateString()" Title="Nap" />
+            <PropertyColumn Property="e=>e.Menu" Title="Étel" />
+            <PropertyColumn Property="e=>e.Adag" Title="Adag" />
+            <PropertyColumn Property="e => e.Darab" Title="Darab" />
+             <PropertyColumn Property="@((e) => e.Elfogyasztva?"Igen":"Nem")" Title="Elfogyasztva" />
+           <TemplateColumn Title="Műveletek">
+                <FluentButton Appearance="Appearance.Accent" OnClick="@(() => EditEtkezes(context))">Szerkesztés</FluentButton>
+                <FluentButton Appearance="Appearance.Accent" OnClick="@(() => Delete.InvokeAsync(context.Id))">Törlés</FluentButton>
+            </TemplateColumn>
+        </FluentDataGrid>
+    </FluentAccordionItem>
+}
+</FluentAccordion>
 
-</FluentDataGrid>
 @code {
     [Parameter]
-    public List<Etkezes> Etkezesek { get; set; } = new List<Etkezes>();
+    public List<EtkezesView> Etkezesek { get; set; } = new List<EtkezesView>();
     [Parameter]
     public EventCallback<Etkezes> Update { get; set; }
     [Parameter]
     public EventCallback<int> Delete { get; set; }
 
     bool IsEdited = false;
-    private async void EditEtkezes(Etkezes etkezes)
+    private async void EditEtkezes(EtkezesView etkezes)
     {
         DialogParameters parameters = new()
         {
-            Title = $"{etkezes.User.Name} adatai",
+            Title = $"{etkezes.Name} adatai",
             TitleTypo = Typography.H4,
             Width = "500px",
             Modal = true,
@@ -38,10 +44,23 @@
 
         if (result.Data is not null)
         {
-            etkezes = (Etkezes)result.Data;
-            var updatingEtkezes = Etkezesek.Find(u => u.Id == etkezes.Id);
-            updatingEtkezes = etkezes;
-            await Update.InvokeAsync(etkezes);
+            var etkezesView = (EtkezesView)result.Data;
+            Etkezes updatedEtkezes = new Etkezes
+            {
+                Id = etkezesView.Id,
+                UserId = etkezesView.UserId,
+                Datum = etkezesView.Datum,
+                Menu = etkezesView.Menu,
+                Adag = etkezesView.Adag,
+                Darab = etkezesView.Darab,
+                User = new User
+                {
+                    Id = etkezesView.UserId,
+                    Name = etkezesView.Name,
+                    Osztaly = etkezesView.Osztaly
+                }
+            };
+            await Update.InvokeAsync(updatedEtkezes);
         }
     }
 

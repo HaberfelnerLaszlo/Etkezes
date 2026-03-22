@@ -4,9 +4,6 @@
     <PropertyColumn Property="u => u.Name" Title="Név" />
     <PropertyColumn Property="u => u.Osztaly" Title="Osztály" />
     <PropertyColumn Property="u => u.Etkezik" Title="Étkezik?" />
-    <PropertyColumn Property="u => u.FpId" Title="Id" />
-    <PropertyColumn Property="u => u.FingerPrint1" Title="1. Ujjlenyomat" />
-    <PropertyColumn Property="u => u.FingerPrint2" Title="2. Ujjlenyomat" />
     <TemplateColumn Title="Mûveletek">
         <FluentButton Appearance="Appearance.Accent" OnClick="@(() => EditUser(context))">Szerkesztés</FluentButton>
         <FluentButton Appearance="Appearance.Accent" OnClick="@(() => DeleteUser(context))">Törlés</FluentButton>
@@ -37,7 +34,7 @@
             PreventScroll = true
         };
 
-        IDialogReference dialog = await dialogService.ShowDialogAsync<LoginDialog>(user, parameters);
+        IDialogReference dialog = await dialogService.ShowDialogAsync<UserDialog>(user, parameters);
         DialogResult? result = await dialog.Result;
 
         if (result.Data is not null)
