@@ -4,9 +4,9 @@ using FingerPrintService;
 
 namespace Etkezes_Ellenor.Services
 {
-    public class DataService(LoginUserService loginService, IFPService fPService)
+    public class DataService(LoginUserService loginService)
     {
-        private User _user = new();
+       private User _user = new();
         private LoginUser? _loginUser = null;
         public event EventHandler<DataServiceMessageEventArgs>? DataServiceMessage;
         public User GetUser() => _user;
@@ -24,49 +24,49 @@ namespace Etkezes_Ellenor.Services
             users.Add(new() { Id = 78965412316, Name = "Diák 16", Osztaly = "7.c", Etkezik = true });
             return users.AsQueryable();
         }
-        public async Task<bool> LoginUsersLoad()
-        {
-            try
-            {
-                IList<LoginUser> users = loginService.GetAllUsers();
-                if (users.Count == 0)
-                {
-                    Console.WriteLine("No users found.");
-                    return false;
-                }
-                foreach (var item in users)
-                {
-                    if (await fPService.AddFingerprintAsync(item.FingerPrint1, item.FpId))
-                    {
-                        Console.WriteLine($"Fingerprint for user {item.Name} added successfully.");
+        // public async Task<bool> LoginUsersLoad()
+        // {
+        //     try
+        //     {
+        //         IList<LoginUser> users = loginService.GetAllUsers();
+        //         if (users.Count == 0)
+        //         {
+        //             Console.WriteLine("No users found.");
+        //             return false;
+        //         }
+        //         foreach (var item in users)
+        //         {
+        //             if (await fPService.AddFingerprintAsync(item.FingerPrint1, item.FpId))
+        //             {
+        //                 Console.WriteLine($"Fingerprint for user {item.Name} added successfully.");
 
-                    }
-                    else
-                    {
-                        Console.WriteLine($"Failed to add fingerprint for user {item.Name}.");
-                    }
-                    if (string.IsNullOrEmpty(item.FingerPrint2))
-                    {
-                        Console.WriteLine($"No second fingerprint for user {item.Name}.");
-                        continue;
-                    }
-                    if (await fPService.AddFingerprintAsync(item.FingerPrint2, item.FpId + 1000))
-                    {
-                        Console.WriteLine($"Second fingerprint for user {item.Name} added successfully.");
-                    }
-                    else
-                    {
-                        Console.WriteLine($"Failed to add second fingerprint for user {item.Name}.");
-                    }
-                }
-                return true;
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error: {ex.Message}");
-                return false;
-            }
-        }
+        //             }
+        //             else
+        //             {
+        //                 Console.WriteLine($"Failed to add fingerprint for user {item.Name}.");
+        //             }
+        //             if (string.IsNullOrEmpty(item.FingerPrint2))
+        //             {
+        //                 Console.WriteLine($"No second fingerprint for user {item.Name}.");
+        //                 continue;
+        //             }
+        //             if (await fPService.AddFingerprintAsync(item.FingerPrint2, item.FpId + 1000))
+        //             {
+        //                 Console.WriteLine($"Second fingerprint for user {item.Name} added successfully.");
+        //             }
+        //             else
+        //             {
+        //                 Console.WriteLine($"Failed to add second fingerprint for user {item.Name}.");
+        //             }
+        //         }
+        //         return true;
+        //     }
+        //     catch (Exception ex)
+        //     {
+        //         Console.WriteLine($"Error: {ex.Message}");
+        //         return false;
+        //     }
+        // }
         public bool IsAdminLogin()
         {
             if(loginService.GetAllUsers().Count() == 0)
