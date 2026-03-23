@@ -11,6 +11,7 @@ namespace Etkezes_API.Endpoints
         public static void MapEtkezesEndpoint(this WebApplication app)
         {
             app.MapGet("/etkezesek", async (EtkezesService etkezesService) => await GetAll(etkezesService)).WithName("GetEtkezesAll");
+            app.MapGet("/maietkezesek", async (EtkezesService etkezesService) => await GetEtkezesByToday(etkezesService));
             app.MapGet("/etkezesek/{date}", async (DateTime date, EtkezesService etkezesService) => await GetEtkezesByDate(date, etkezesService)).WithName("GetEtkezesByDate");
             app.MapGet("/etkezesek/osztaly/{osztaly}", async (string osztaly, EtkezesService etkezesService) => await GetEtkezesByOsztaly(osztaly, etkezesService)).WithName("GetEtkezesByOsztaly");
             app.MapGet("/etkezesek/{date}/osztaly/{osztaly}", async (DateTime date, string osztaly, EtkezesService etkezesService) => await GetEtkezesByDateByOsztaly(date, osztaly, etkezesService)).WithName("GetEtkezesByDateByOsztaly");
@@ -18,6 +19,21 @@ namespace Etkezes_API.Endpoints
             app.MapPost("/etkezes",async (Etkezes etkezes, EtkezesService etkezesService,UserService userService) => await AddEtkezes(etkezes, etkezesService, userService));
             app.MapPut("etkezes/{id}",async (int id, Etkezes etkezes, EtkezesService etkezesService) => await UpdateEtkezes(id, etkezes, etkezesService));
             app.MapDelete("/etkezes/{id}",async (int id, EtkezesService etkezesService)=>await DeleteEtkezes(id, etkezesService));
+        }
+
+        private static async Task<IResult> GetEtkezesByToday(EtkezesService etkezesService)
+        {
+            response.Clear();
+            var etkezesek = await etkezesService.GetAllByToday();
+            if (etkezesek == null || etkezesek.Count == 0)
+            {
+                response.Success = false;
+                response.Message = etkezesService.ErrorMessage;
+                return await Task.FromResult(Results.NotFound(response));
+            }
+            response.Success = true;
+            response.Data = etkezesek;
+            return await Task.FromResult(Results.Ok(response));
         }
 
         private static async Task<IResult> GetUsersByEtkezesDateOsztaly(DateTime date, string osztaly, EtkezesService etkezesService, UserService userService)

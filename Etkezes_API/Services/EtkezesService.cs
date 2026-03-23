@@ -26,6 +26,18 @@ namespace Etkezes_API.Services
         {
             return await _context.Etkezesek.Where(e => e.Datum == date).AsNoTracking().ToListAsync();
         }
+        public async Task<List<EtkezokView>?> GetAllByToday()
+        {
+            var etkezesek = await _context.Etkezesek.Include(e => e.User).Where(e => e.Datum == DateTime.Today).AsNoTracking().Select(e => new EtkezokView
+            {
+                Menu = e.Menu,
+                UserId = e.UserId,
+                Adag = e.Adag,
+                Darab = e.Darab,
+                Name = e.User.Name,
+            }).ToListAsync();
+            return etkezesek;
+        }
         public async Task<bool> Create(Etkezes e)
         {
             try

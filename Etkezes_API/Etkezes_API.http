@@ -39,3 +39,5 @@ content-type: application/json
         "osztaly":"5.b"
     }
 }
+###
+GET {{Etkezes_API_HostAddress}}/maietkezesek
