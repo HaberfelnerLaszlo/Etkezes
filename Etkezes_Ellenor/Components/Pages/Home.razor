@@ -94,7 +94,7 @@
                 await fpService.Open();
             }
             identifiedUser = dataService.GetLoginUser();
-            var users = dataService.GetUsers().ToList();
+            @* var users = dataService.GetUsers().ToList();
             foreach (var item in users)
             {
                 if (userService.UserExists(item.Id))
@@ -102,7 +102,7 @@
                     continue;
                 }
                 userService.AddUser(item);
-            }
+            } *@
             //Todo: Ide teljesen más lesz!
             // if (fpService.ClearDb()) 
             // { 

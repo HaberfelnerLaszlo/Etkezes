@@ -1,18 +1,16 @@
 ﻿using Etkezes_Ellenor.Data;
-
 using Etkezes_Models;
-
+using FingerPrintService;
 using System.Security.Cryptography;
+
 
 namespace Etkezes_Ellenor.Services
 {
-    public class LoginUserService
+    public class LoginUserService(EtkezesDBcontext context, IFPService fPService)
     {
-        private readonly EtkezesDBcontext _context;
-        public LoginUserService(EtkezesDBcontext context)
-        {
-            _context = context;
-        }
+        private readonly EtkezesDBcontext _context = context;
+        private readonly IFPService _fPService = fPService;
+
         public List<LoginUser> GetAllUsers()
         {
             return _context.LoginUsers.ToList();
@@ -85,5 +83,49 @@ namespace Etkezes_Ellenor.Services
                 return Array.Empty<byte>();
             }
         }
+                public async Task<bool> LoginUsersLoad()
+        {
+            try
+            {
+                IList<LoginUser> users = _context.LoginUsers.ToList();
+                if (users.Count == 0)
+                {
+                    Console.WriteLine("No users found.");
+                    return false;
+                }
+                foreach (var item in users)
+                {
+                    if (await fPService.AddFingerprintAsync(item.FingerPrint1, item.FpId))
+                    {
+                        Console.WriteLine($"Fingerprint for user {item.Name} added successfully.");
+
+                    }
+                    else
+                    {
+                        Console.WriteLine($"Failed to add fingerprint for user {item.Name}.");
+                    }
+                    if (string.IsNullOrEmpty(item.FingerPrint2))
+                    {
+                        Console.WriteLine($"No second fingerprint for user {item.Name}.");
+                        continue;
+                    }
+                    if (await fPService.AddFingerprintAsync(item.FingerPrint2, item.FpId + 1000))
+                    {
+                        Console.WriteLine($"Second fingerprint for user {item.Name} added successfully.");
+                    }
+                    else
+                    {
+                        Console.WriteLine($"Failed to add second fingerprint for user {item.Name}.");
+                    }
+                }
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error: {ex.Message}");
+                return false;
+            }
+        }
+
     }
 }

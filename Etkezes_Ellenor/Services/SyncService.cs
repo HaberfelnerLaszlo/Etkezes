@@ -210,12 +210,12 @@ namespace Etkezes_Ellenor.Services
         {
             try
             {
-                var etkezesekToUpdate = await apiHelper.Get<List<EtkezokView>>($"/etkezesek/{DateTime.Today:O}");
+                var etkezesekToUpdate = await apiHelper.Get<List<EtkezokView>>("/maietkezesek");
                 if (etkezesekToUpdate != null)
                 {
                     foreach (var etkezes in etkezesekToUpdate)
                     {
-                        var localEtkezes = await dbContext.Etkezesek.FindAsync(etkezes.UserId);
+                        var localEtkezes = await dbContext.Etkezesek.FirstOrDefaultAsync(e=>e.UserId == etkezes.UserId);
                         if (localEtkezes != null)
                         {
                             localEtkezes.Name = etkezes.Name;
