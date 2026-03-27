@@ -1,8 +1,11 @@
 ﻿using Etkezes_Ellenor.Data;
 
 using Etkezes_Models;
+using Etkezes_Models.ViewModels;
 
 using FingerPrintService;
+
+using Microsoft.EntityFrameworkCore;
 
 namespace Etkezes_Ellenor.Services
 {
@@ -25,6 +28,10 @@ namespace Etkezes_Ellenor.Services
         {
             return _context.Users.FirstOrDefault(u => u.Id == id);
         }
+        public User? GetUserByFId(int fid)
+        {
+            return _context.Users.FirstOrDefault(u => u.FpId == fid);
+        }
         public User GetUserByName(string name)
         {
             return _context.Users.FirstOrDefault(u => u.Name == name) ?? new User();
@@ -36,6 +43,13 @@ namespace Etkezes_Ellenor.Services
         public List<User> GetUsersByClass_NoFP(string osztaly)
         {
             return _context.Users.Where(u => u.Osztaly == osztaly && String.IsNullOrWhiteSpace(u.FingerPrint1)).ToList();
+        }
+        public async Task<List<FingerPrintData>> GetAllUserFPTmp()
+        {
+            var users = await _context.Users.Where(u => u.FpId > 0).AsNoTracking().ToListAsync();
+            List<FingerPrintData> result = new List<FingerPrintData>();
+            users.ForEach(u => { result.Add(new FingerPrintData() { FpId = u.FpId, FingerTemplate1 = u.FingerPrint1, FingerTemplate2 = u.FingerPrint2 }); });
+            return result;
         }
         public bool UserExists(long id)
         {

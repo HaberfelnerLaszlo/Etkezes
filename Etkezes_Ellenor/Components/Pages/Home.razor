@@ -7,6 +7,7 @@
 @inject UserService userService
 @inject DataService dataService
 @inject SyncService syncService
+@inject EtkezesService etkezesService
 @inject ILogger<Home> logger
 @inject IToastService toastService
 @inject IDialogService dialogService
@@ -42,42 +43,72 @@
         }
     </FluentHeader>
     <FluentBodyContent Style="height: auto;">
-        <FluentGrid Justify="JustifyContent.SpaceBetween"
-                    Style="background-color: var(--neutral-layer-3); overflow: hidden; resize: horizontal; padding: 4px;">
-            <FluentGridItem Style="min-width: 200px;" Justify="JustifyContent.Center">
-                <img src="images/positive-check-mark.png" alt="Enabled" style="width: 500px; height: 500px;" />
-            </FluentGridItem>
+        <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" HorizontalGap="15">
+            <FluentStack Orientation="Orientation.Vertical" VerticalAlignment="VerticalAlignment.Center" VerticalGap="10" Width="500px" HorizontalAlignment="HorizontalAlignment.Center">
+                <img src="@adatok[0].Image" alt="Enabled" style="width: 500px; height: 500px;" />
+                <FluentLabel Typo="Typography.H5">@adatok[0].Name</FluentLabel>
+            </FluentStack>
+            <FluentStack Orientation="Orientation.Vertical" VerticalAlignment="VerticalAlignment.Center" VerticalGap="10">
+                <FluentCard MinimalStyle="true" Height="200px" Width="200px">
+                    <img src="@adatok[1].Image" alt="Enabled" style="width: 150px; height: 150px;" />
+                    <FluentLabel Typo="Typography.H6">@adatok[1].Name</FluentLabel>
+                </FluentCard>
+                <FluentCard MinimalStyle="true" Height="200px" Width="200px">
+                    <img src="@adatok[2].Image" alt="Enabled" style="width: 150px; height: 150px;" />
+                    <FluentLabel Typo="Typography.H6">@adatok[2].Name</FluentLabel>
+                </FluentCard>
+
+            </FluentStack>
             @if(String.IsNullOrWhiteSpace(identifiedUser?.UserName) == false)
             {
-            <FluentGridItem Justify="JustifyContent.FlexEnd" Gap="10px">
-                <FluentStack Orientation="Orientation.Vertical" VerticalAlignment="VerticalAlignment.Center" HorizontalAlignment="HorizontalAlignment.Right">
+                <FluentStack Orientation="Orientation.Vertical" VerticalAlignment="VerticalAlignment.Center" VerticalGap="10" Width="150px">
                     <FluentButton Appearance="Appearance.Neutral" OnClick="() => { errorMessage = string.Empty; fpService.Open(); }">Indítás</FluentButton>
                     <FluentButton Appearance="Appearance.Neutral" OnClick="async () => { errorMessage = string.Empty; await syncService.GetSyncDates(); }">Szinkronizáció</FluentButton>
                     <FluentButton Appearance="Appearance.Neutral" OnClick="@(() => navigationManager.NavigateTo("/reg"))">Regisztráció</FluentButton>
                     <FluentButton Appearance="Appearance.Neutral" OnClick="@(() => navigationManager.NavigateTo("/loginusers"))">Felhasználók</FluentButton>
                     <FluentButton Appearance="Appearance.Neutral" OnClick="@(() => navigationManager.NavigateTo("/users"))">Étkezők</FluentButton>
+               </FluentStack>
+            }
+        </FluentStack>
+        <FluentGrid Justify="JustifyContent.SpaceBetween"
+                    Style="background-color: var(--neutral-layer-3); overflow: hidden; resize: horizontal; padding: 4px;">
+            <FluentGridItem Style="min-width: 200px;" Justify="JustifyContent.Center">
+            </FluentGridItem>
+            @if(String.IsNullOrWhiteSpace(identifiedUser?.UserName) == false)
+            {
+            <FluentGridItem Justify="JustifyContent.FlexEnd" Gap="10px">
+                <FluentStack Orientation="Orientation.Vertical" VerticalAlignment="VerticalAlignment.Center" HorizontalAlignment="HorizontalAlignment.Right">
                 </FluentStack>
                 </FluentGridItem>
             }
         </FluentGrid>
     </FluentBodyContent>
     <FluentFooter>
-        2026.03.14 19:42
+        2026.03.22 19:42
         <FluentSpacer/>
         <p>@message</p>
         <FluentSpacer/>
-        Verzió: 0.4.3
+        Verzió: 0.6.1
     </FluentFooter>
 </FluentLayout>
 @code {
     string message = "A jók", errorMessage = "A hibák";
     bool isDeviceConnected = false;
     LoginUser? identifiedUser = null;
+    List<FingerPrintData> fingerPrints = [];
+    Adat[] adatok = new Adat[4];
+    private record Adat(string Image, string Name, string Menu);
     protected override async Task OnInitializedAsync()
     {
         fpService.MessageChanged += OnMessageChanged!;
         fpService.FingerPrintRegistered += OnRegistered!;
         fpService.SuccessIdentification += OnIdentificationSuccess!;
+        adatok[0] = new Adat("images/question-mark-circle-outline-icon.svg", "0", "");
+        adatok[1] = new Adat("images/question-mark-circle-outline-icon.svg", "1", "");
+        adatok[2] = new Adat("images/question-mark-circle-outline-icon.svg", "2", "");
+        adatok[3] = new Adat("images/question-mark-circle-outline-icon.svg", "3", "");
+        fingerPrints.AddRange(await loginService.GetAllLoginUserFPTmp());
+        fingerPrints.AddRange(await userService.GetAllUserFPTmp());
     }
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -91,7 +122,7 @@
             else
             {
                 toastService.ShowError("Nincs csatlakoztatva ujjlenyomat olvasó eszköz!");
-                await fpService.Open();
+                StateHasChanged();
             }
             identifiedUser = dataService.GetLoginUser();
             @* var users = dataService.GetUsers().ToList();
@@ -114,27 +145,36 @@
             // else toastService.ShowError("Nem sikerült törölni az adatbázist, az azonosítás nem kapcsolható be!");
             StateHasChanged();
         }
+        if (!isDeviceConnected){
+            await fpService.Open();
+        }
     }
-    private void OnMessageChanged(object sender, FPMessageChangedEventArgs e)
+    private async void OnMessageChanged(object sender, FPMessageChangedEventArgs e)
     {
         if (e.IsError)
         {
             // Handle error messages
-            if(e.Code == -17) // Assuming 100 is the code for fingerprint device connection error
+            if (e.Code == -17) // Assuming 100 is the code for fingerprint device connection error
             {
-                toastService.ShowCommunicationToast(new ToastParameters<CommunicationToastContent>()
+                if (!ClickedMatching())
                 {
-                    Intent = ToastIntent.Error,
-                    Title = "Nem regisztrált ujjlenyomat",
-                    TopCTAType = ToastTopCTAType.Timestamp,
-                    Timeout = 8000,
-                    PrimaryAction = "Igen",
-                    OnPrimaryAction = EventCallback.Factory.Create<ToastResult>(this, ClickedRegistration),
-                    Content = new CommunicationToastContent()
-                    {
-                        Details = "Szeretné regisztrálni az ujjlenyomatott?",
-                    },
-                });
+                    toastService.ShowCommunicationToast(new ToastParameters<CommunicationToastContent>()
+                        {
+                            Intent = ToastIntent.Error,
+                            Title = "Nem regisztrált ujjlenyomat",
+                            TopCTAType = ToastTopCTAType.Timestamp,
+                            Timeout = 8000,
+                            PrimaryAction = "Igen",
+                            OnPrimaryAction = EventCallback.Factory.Create<ToastResult>(this, ClickedRegistration),
+                            Content = new CommunicationToastContent()
+                            {
+                                Details = "Szeretné regisztrálni az ujjlenyomatott?",
+                            },
+                        });
+                    await InvokeAsync(() => StateHasChanged());
+                    return;
+                }
+                await InvokeAsync(()=>StateHasChanged());
                 return;
             }
             errorMessage = e.Message;
@@ -170,6 +210,15 @@
             navigationManager.NavigateTo("/fpreg");
         }
     }
+    private bool ClickedMatching()
+    {
+        var res=fpService.Matching(fingerPrints);
+        if (res > 0)
+        {
+            if (LoginUserIdentify(res) || UserIdentify(res)) return true;
+        }
+        return false;
+    }
     // private void OnRegistationSuccess(object sender, FPRegisteredEventArgs e) 
     // {
     //     message = e.FingerPrint; 
@@ -179,12 +228,17 @@
     // Add this method to handle the SuccessIdentification event
     private void OnIdentificationSuccess(object? sender, FPSuccessIdentificationEventArgs e)
     {
-        if (loginService.HandleSuccessfulIdentification(e.Fid))
+        if(LoginUserIdentify(e.Fid)) return;
+        UserIdentify(e.Fid);
+    }
+    private bool LoginUserIdentify(int fpId)
+    {
+        if (loginService.HandleSuccessfulIdentification(fpId))
         {
-            if (identifiedUser == null|| String.IsNullOrWhiteSpace(identifiedUser.UserName))
+            if (identifiedUser == null || String.IsNullOrWhiteSpace(identifiedUser.UserName))
             {
                 // Handle successful login
-                identifiedUser = loginService.GetUserByFpId(e.Fid);
+                identifiedUser = loginService.GetUserByFpId(fpId);
                 toastService.ShowSuccess($"Sikeres azonosítás! Üdvözlünk, {identifiedUser.Name}!"); //TODO: Personalizált üdvözlés a felhasználó nevével, belépés felajánlása
                 toastService.ShowCommunicationToast(new ToastParameters<CommunicationToastContent>()
                 {
@@ -199,30 +253,67 @@
                         Details = "Szeretne belépni?",
                     },
                 });
-
+                return true;
             }
-            else if (identifiedUser.FpId != e.Fid)
+            else if (identifiedUser.FpId != fpId)
             {
                 // Handle case where a different user is identified while someone is already logged in
                 toastService.ShowWarning($"Egy másik felhasználó azonosítva! Kérem {identifiedUser.Name} jelentkezzen ki először.");
-                return;
+                return true;
             }
             else
             {
                 // Handle case where the same user is identified again (optional)
                 toastService.ShowInfo($"Már belépet {identifiedUser.Name}!");
-                return;
+                return true;
             }
-            logger.LogInformation($"User with FP ID {e.Fid} successfully identified.");
-            return;
         }
-        if (userService.HandleSuccessfulIdentification(e.Fid))
+        return false;
+    }
+    private bool UserIdentify(int fpId)
+    {
+        if (userService.HandleSuccessfulIdentification(fpId))
         {
+            logger.LogInformation($"User with FP ID {fpId} successfully identified.");
             // Handle successful user identification
-            toastService.ShowSuccess("Sikeres azonosítás! Üdvözlünk az étkezők között!");
-            logger.LogInformation($"User with FP ID {e.Fid} successfully identified.");
+            var adat = userService.GetUserByFId(fpId);
+            if (adat == null)
+            {
+                AdatRendezo(new Adat("images/anonymous-user-icon.svg", "Ismeretlen", ""));
+                toastService.ShowWarning($"Hiba lépet fel az étkező lekérésekor FpId: {fpId}");
+            }
+            else
+            {
+                var etkezo = etkezesService.GetEtkezo(adat.Id);
+                if (etkezo == null)
+                {
+                    AdatRendezo(new Adat("images/red-x-line-icon.svg", adat.Name, ""));
+                }
+                else
+                {
+                    if (etkezo.Adag.Contains("kis", StringComparison.CurrentCultureIgnoreCase))
+                    {
+                        if (etkezo.Menu.Contains("A")) AdatRendezo(new Adat("images/bubble-letter-a-lowercase-green-icon.svg", etkezo.Name, etkezo.Menu));
+                        else AdatRendezo(new Adat("images/bubble-letter-b-lowercase-green-icon.svg", etkezo.Name, etkezo.Menu));
+                    }
+                    else
+                    {
+                        if (etkezo.Menu.Contains("A")) AdatRendezo(new Adat("images/bubble-letter-a-green-icon.svg", etkezo.Name, etkezo.Menu));
+                        else AdatRendezo(new Adat("images/bubble-letter-b-green-icon.svg", etkezo.Name, etkezo.Menu));
+                    }
+                }
+                toastService.ShowSuccess("Sikeres azonosítás! Üdvözlünk az étkezők között!");
+            }
+            return true;
         }
-        // TODO: Add your event handling logic here
+        return false;
+    }
+    private void AdatRendezo(Adat adat)
+    {
+        if (adatok[2] != null) adatok[3] = adatok[2];
+        if (adatok[1] != null) adatok[2] = adatok[1];
+        if (adatok[0] != null) adatok[1] = adatok[0];
+        adatok[0] = adat;
     }
     private async void LoginPage()
     {

@@ -26,32 +26,58 @@ namespace Etkezes_Ellenor.Services
         }
         public async Task StartAsync(CancellationToken cancellationToken)
         {
-            if(await _syncService.GetSyncDates()) {_logger.LogInformation("Adatbázis szinkronizálás."); }
-            else { _logger.LogInformation($"Adatbázis szinkronizálás sikertelen. Hibaüzenet: {_syncService.ErrorMessage}"); }
-            await Task.CompletedTask;
+            try
+            {
+                  if(await _syncService.GetSyncDates()) {_logger.LogInformation("Adatbázis szinkronizálás."); }
+                else { _logger.LogInformation($"Adatbázis szinkronizálás sikertelen. Hibaüzenet: {_syncService.ErrorMessage}"); }
+                await Task.CompletedTask;
+            }
+            catch (Exception e)
+            {
+
+                _logger.LogError("Hiba történt a szinkronizálásoknál {e.Message}", e.Message);
+                await Task.FromException<Task>(e);
+            }
         }
 
         public Task StartedAsync(CancellationToken cancellationToken)
         {
-            var message = _fpService.DeviceConnected() ? "Fingerprint device connected." : "Fingerprint device not connected.";
-            _logger.LogInformation(message);
-            if (_fpService.ClearDb())
+            try
             {
-                _loginUserService.LoginUsersLoad().Wait(cancellationToken);
-                _userService.UserLoading().Wait(cancellationToken);
-                _fpService.SwitchIdentifyMode(true);
-                // _toastService.ShowSuccess("Azonosítás bekapcsolva.");
+                 var message = _fpService.DeviceConnected() ? "Fingerprint device connected." : "Fingerprint device not connected.";
+                _logger.LogInformation(message);
+                if (_fpService.ClearDb())
+                {
+                    _loginUserService.LoginUsersLoad().Wait(cancellationToken);
+                    _userService.UserLoading().Wait(cancellationToken);
+                    _fpService.SwitchIdentifyMode(true);
+                    _logger.LogInformation("Azonosítás bekapcsolva.");
+                    // _toastService.ShowSuccess("Azonosítás bekapcsolva.");
+                }
+                //else _toastService.ShowError("Nem sikerült törölni az adatbázist, az azonosítás nem kapcsolható be!");
+                return Task.CompletedTask;
             }
-            //else _toastService.ShowError("Nem sikerült törölni az adatbázist, az azonosítás nem kapcsolható be!");
-            return Task.CompletedTask;
+            catch (Exception e)
+            {
+                _logger.LogError("Hiba történt a szinkronizálásoknál inditásánál {e.Message}", e.Message);
+                return Task.FromException<Task>(e);
+            }
         }
 
         public Task StartingAsync(CancellationToken cancellationToken)
         {
-            _fpService.Open();
-            //_fpService.DeviceInit();
-            _logger.LogInformation("Fingerprint service started.");
-            return Task.CompletedTask;
+            try
+            {
+                _fpService.Open();
+                //_fpService.DeviceInit();
+                _logger.LogInformation("Fingerprint service started.");
+                return Task.CompletedTask;
+            }
+            catch (Exception e)
+            {
+                _logger.LogError("Hiba történt fingerprint inditásánál {e.Message}", e.Message);
+                return Task.FromException<Task>(e);
+            }
         }
 
         public Task StopAsync(CancellationToken cancellationToken)

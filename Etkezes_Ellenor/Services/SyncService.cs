@@ -210,6 +210,7 @@ namespace Etkezes_Ellenor.Services
         {
             try
             {
+                await dbContext.Etkezesek.ForEachAsync(e => e.Darab = 0);
                 var etkezesekToUpdate = await apiHelper.Get<List<EtkezokView>>("/maietkezesek");
                 if (etkezesekToUpdate != null)
                 {
@@ -252,7 +253,7 @@ namespace Etkezes_Ellenor.Services
             }
 
             }
-        internal async Task<bool>                                                                       SyncLoginUserToServer(List<LoginUser> loginUsers)
+        internal async Task<bool> SyncLoginUserToServer(List<LoginUser> loginUsers)
         {
             try
             {

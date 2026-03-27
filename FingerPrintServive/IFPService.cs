@@ -1,4 +1,6 @@
-﻿using SourceAFIS;
+﻿using Etkezes_Models.ViewModels;
+
+using SourceAFIS;
 
 using ZkTecoFingerPrint;
 
@@ -11,6 +13,7 @@ namespace FingerPrintService
         event EventHandler<FPSuccessIdentificationEventArgs>? SuccessIdentification;
 
         Task<bool> AddFingerprintAsync(string fingerPrintBase64, int fId);
+        int Matching(List<FingerPrintData> fingerPrints);
         bool ClearDb();
         void Close();
         bool DeviceConnected();

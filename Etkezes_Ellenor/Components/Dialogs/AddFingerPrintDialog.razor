@@ -1,0 +1,68 @@
+﻿@implements IDialogContentComponent<User>
+@inject IFPService fpService
+<FluentDialogHeader>
+    <h3>@Content.Name újjlenyomat rögzítése</h3>
+</FluentDialogHeader>
+<FluentDialogBody>
+    <FluentGrid Spacing="10" Style="background-color: var(--neutral-layer-3); padding: 4px; ">
+        <FluentGridItem xs="6" sm="3">
+            <FluentLabel>@Content.FingerPrint1.Substring(0, 10)</FluentLabel>
+        </FluentGridItem>
+        <FluentGridItem xs="6" sm="3">
+            <FluentButton Appearance="Appearance.Accent" OnClick="@(() => RegisterFingerprint(1))" Disabled="@(!IsNewFp)">1. Ujjlenyomat Regisztráció</FluentButton>
+        </FluentGridItem>
+        <FluentGridItem xs="6" sm="3">
+            <FluentLabel>@Content.FingerPrint2.Substring(0, 10)</FluentLabel>
+        </FluentGridItem>
+        <FluentGridItem xs="6" sm="3">
+            <FluentButton Appearance="Appearance.Accent" OnClick="@(() => RegisterFingerprint(2))" Disabled="@(!IsNewFp)">2. Ujjlenyomat Regisztráció</FluentButton>
+        </FluentGridItem>
+    </FluentGrid>
+</FluentDialogBody>
+
+<FluentDialogFooter>
+    <FluentButton Appearance="Appearance.Accent" OnClick="@SaveAsync" Disabled="@(Content == null)"> Kiválasztva </FluentButton>
+    <FluentButton Appearance="Appearance.Neutral" OnClick="@CancelAsync"> Mégse </FluentButton>
+</FluentDialogFooter>
+
+@code {
+    [Parameter]
+    public User Content { get; set; } = default!;
+    [CascadingParameter]
+    public FluentDialog Dialog { get; set; } = default!;
+    bool IsNewFp = false;
+    protected override async Task OnParametersSetAsync()
+    {
+        IsNewFp = String.IsNullOrWhiteSpace(Content.FingerPrint1) || String.IsNullOrWhiteSpace(Content.FingerPrint2);
+        // if (IsNewFp)
+        // {
+        //     Content.FingerPrint1 = await fpService.NewFingerprintAsync(1);
+        // }
+        // else
+        // {
+        //     Content.FingerPrint2 = await fpService.NewFingerprintAsync(2);
+        // }
+    }
+    private async Task RegisterFingerprint(int fpIndex)
+    {
+        if (fpIndex == 1)
+        {
+            await fpService.NewFingerprintAsync(fpIndex);
+        }
+        else
+        {
+            await fpService.NewFingerprintAsync(fpIndex);
+        }
+        IsNewFp = String.IsNullOrWhiteSpace(Content.FingerPrint1) || String.IsNullOrWhiteSpace(Content.FingerPrint2);
+    }
+    private async Task SaveAsync()
+    {
+        await Dialog.CloseAsync(Content);
+    }
+
+    private async Task CancelAsync()
+    {
+        await Dialog.CancelAsync();
+    }
+
+}

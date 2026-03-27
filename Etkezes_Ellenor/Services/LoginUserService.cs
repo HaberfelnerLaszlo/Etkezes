@@ -1,6 +1,12 @@
 ﻿using Etkezes_Ellenor.Data;
+
 using Etkezes_Models;
+using Etkezes_Models.ViewModels;
+
 using FingerPrintService;
+
+using Microsoft.EntityFrameworkCore;
+
 using System.Security.Cryptography;
 
 
@@ -27,6 +33,14 @@ namespace Etkezes_Ellenor.Services
         {
             return _context.LoginUsers.FirstOrDefault(u => u.UserName == name) ?? new LoginUser();
         }
+        public async Task<List<FingerPrintData>> GetAllLoginUserFPTmp()
+        {
+            var users = await _context.LoginUsers.Where(u => u.FpId > 0).AsNoTracking().ToListAsync();
+            List<FingerPrintData> result = new List<FingerPrintData>();
+            users.ForEach(u => { result.Add(new FingerPrintData() { FpId = u.FpId, FingerTemplate1 = u.FingerPrint1, FingerTemplate2 = u.FingerPrint2 }); });
+            return result;
+        }
+
         public bool AddUser(LoginUser user,string password) 
         {
             try

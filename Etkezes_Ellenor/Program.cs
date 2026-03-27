@@ -20,19 +20,26 @@ builder.Services.AddDbContext<EtkezesDBcontext>( ServiceLifetime.Singleton);
 builder.Services.AddHttpClient();
 //ZkfpNative.Initialize();
 builder.Services.AddFluentUIComponents();
-builder.Services.AddSingleton<IFPService, FPService>();
+if (OperatingSystem.IsLinux())
+{
+  builder.Services.AddSingleton<IFPService, FPServiceLinux>();
+}
+else
+{
+    builder.Services.AddSingleton<IFPService, FPServiceWindows>();
+}
 builder.Services.AddHostedService<BgService>();
 builder.Services.AddSingleton<LoginUserService>();
 builder.Services.AddSingleton<UserService>();
 builder.Services.AddScoped<DataService>();
 builder.Services.AddSingleton<ApiHelper>();
+builder.Services.AddSingleton<EtkezesService>();
 builder.Services.AddSingleton<SyncService>();
-builder.WebHost.ConfigureKestrel(options =>
-{
-    //options.Listen(System.Net.IPAddress.Parse("192.168.10.90"), 5001);
-    options.ListenAnyIP(5001);
-    options.ListenLocalhost(5000);
-});
+//builder.WebHost.ConfigureKestrel(options =>
+//{
+//    options.ListenAnyIP(6001);
+//    options.ListenLocalhost(6000);
+//});
 var app = builder.Build();
 
 app.MapDefaultEndpoints();
