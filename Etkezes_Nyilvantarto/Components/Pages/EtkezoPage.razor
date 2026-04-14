@@ -2,26 +2,32 @@
 @inject IDialogService dialogService
 @inject IToastService toastService
 @inject EtkezesService etkezesService
+@inject ExcelService excelService
 @implements IDisposable
 <h3>EtkezoPage</h3>
 <SelectOsztaly OnSelectOsztaly="SelectOsztaly"/>
+<FluentButton Appearance="Appearance.Accent" OnClick="@(() => AddEtkezok(1))">Mai étkezők feltöltése</FluentButton>
+<FluentButton Appearance="Appearance.Accent" OnClick="@(() => AddEtkezok(2))"> Étkezők feltöltése adott hónapra</FluentButton>
+<FluentButton Appearance="Appearance.Accent" OnClick="@(() => AddEtkezokToExcel())">Mai étkezők letöltése</FluentButton>
+
 @if (IsselectedOsztaly)
 {
-    <EtkezesekTable Etkezesek="etkezesek" Delete="DeleteEtkezes" Update="UpdateEtkezes" />
+    <EtkezesekTable Etkezesek="etkezesekView" Delete="DeleteEtkezes" Update="UpdateEtkezes" />
 }
 @code {
-    List<EtkezesView> etkezesek = new List<EtkezesView>();
+    List<EtkezesView> etkezesekView = new List<EtkezesView>();
     bool IsselectedOsztaly = false;
     protected override void OnInitialized()
     {
         etkezesService.OnMessage += OnMessageChange!;
+        excelService.OnMessage += OnMessageChange!;
         base.OnInitialized();
     }
     private async Task SelectOsztaly(string osztaly)
     {
         // Handle the selected class here
-        etkezesek = await etkezesService.GetEtkezesekByOsztaly(osztaly);
-        if (etkezesek.Count == 0)
+        etkezesekView = await etkezesService.GetEtkezesekByOsztaly(osztaly);
+        if (etkezesekView.Count == 0)
         {
             toastService.ShowInfo("Nincs rendelés az osztálynak!");
         }
@@ -31,7 +37,173 @@
         }
         StateHasChanged();
     }
-    private void OnMessageChange(object sender, OnMessageEtkezesEventArgs e)
+    private async Task AddEtkezok(int k)
+    {
+        MemoryStream? stream = new();
+        DialogParameters parameters = new()
+        {
+            Width = "500px",
+            Modal = true,
+            PreventScroll = true
+        };
+
+        IDialogReference dialog = await dialogService.ShowDialogAsync<UploadDialog>(stream, parameters);
+        DialogResult? result = await dialog.Result;
+        try
+        {
+            if (result is not null && result.Data is not null)
+            {
+                stream = (MemoryStream)result.Data;
+                if (stream is null)
+                {
+                    toastService.ShowError("Nem sikerült a Fájl feltöltése!");
+                    return;
+                }
+                if(k == 1)
+                {
+                    var maiEtkezesek = await etkezesService.GetEtkezesekByToday();
+                    var etkezok = excelService.ReadMaiEtkezesek(stream);
+                    if (etkezok.Count == 0)
+                    {
+                        //toastService.ShowError("Nem megfelelő fájl formátum! Kérem válassza ki a mai étkezők fájlját!");
+                        return;
+                    }
+                    maiEtkezesek.ForEach(async e =>
+                    {
+                        if (!etkezok.Any(et => et.Azonosito == e.UserId.ToString()))
+                        {
+                            await etkezesService.DeleteMaiEtkezes(e.UserId);
+                        }
+                    });
+                    await AddEtkezokFromExcel(etkezok);
+                }
+                else
+                {
+                    var etkezok = excelService.ReadMonthEtkezesek(stream);
+                    if (etkezok.Count == 0) 
+                    {
+                        toastService.ShowError("Nem megfelelő fájl formátum! Kérem válassza ki a hónap étkezők fájlját!");
+                        return;
+                    }
+                    if (etkezok.Count > 200)
+                    {
+                        for (int i = 0; i < etkezok.Count; i += 200)
+                        {
+                            var etkezokPart = etkezok.Skip(i).Take(200).ToList();
+                            await AddEtkezokMonthFromExcel(etkezokPart);
+                        }
+                    }
+                    else
+                    {
+                        await AddEtkezokMonthFromExcel(etkezok);
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            toastService.ShowError(ex.Message);
+        }
+    }
+    private async Task AddEtkezokFromExcel(List<EtkezokFromExcel> etkezok)
+    {
+        try
+        {
+            List<Etkezes> etkezesek = new List<Etkezes>();
+            string[] osztalyok = ["5", "6", "7", "8"];
+            etkezok.ForEach(e =>
+            {
+                etkezesek.Add(new Etkezes
+                {
+                    UserId = long.Parse(e.Azonosito),
+                    Adag = osztalyok.Any(o => e.Osztaly.Contains(o)) ? "kis adag" : "nagy adag",
+                    Darab = 1,
+                    Datum = DateTime.Today,
+                    Elfogyasztva = false,
+                    User= new User
+                    {
+                        Id = long.Parse(e.Azonosito),
+                        Osztaly = e.Osztaly,
+                        Name = e.Nev,
+                    }
+                });
+                etkezesekView.Add(new EtkezesView
+                {
+                    Id = 0,
+                    UserId = long.Parse(e.Azonosito),
+                    Osztaly = e.Osztaly,
+                    Name = e.Nev,
+                    Adag = osztalyok.Any(o => e.Osztaly.Contains(o)) ? "kis adag" : "nagy adag",
+                    Darab = 1,
+                    Datum = DateTime.Today,
+                    Menu = "A",
+                    Elfogyasztva = false,
+                });
+            });
+            await etkezesService.CreateEtkezesek(etkezesek);
+            toastService.ShowInfo($"{etkezesek.Count} db étkezés sikeresen hozzáadva!");
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            toastService.ShowError(ex.Message);
+        }
+    }
+    private async Task AddEtkezokMonthFromExcel(List<EtkezokMonthFromExcel> etkezok)
+    {
+        try
+        {
+            List<Etkezes> etkezesek = new List<Etkezes>();
+            string[] osztalyok = ["5", "6", "7", "8"];
+            etkezok.ForEach(e =>
+            {
+                var adag = osztalyok.Any(o => e.Osztaly.Contains(o)) ? "kis adag" : "nagy adag";
+                long userId = long.Parse(e.Azonosito);
+                string year =(DateTime.Today.Month==12 && e.Honap=="1") ? (DateTime.Today.Year+1).ToString() : DateTime.Today.Year.ToString();
+                for (int i = 1; i < 32; i++)
+                {
+                    if (e.Etkezesek[i] == 0) continue;
+                    etkezesek.Add(new Etkezes
+                    {
+                        UserId = userId,
+                        Adag = adag,
+                        Darab = 1,
+                        Datum = DateTime.Parse(year + "-" + e.Honap + "-" + i),
+                        Elfogyasztva = false,
+                        User = new User
+                        {
+                            Id = long.Parse(e.Azonosito),
+                            Osztaly = e.Osztaly,
+                            Name = e.Nev,
+                        }
+                    });
+                }
+            });
+            await etkezesService.CreateEtkezesek(etkezesek);
+            toastService.ShowInfo($"{etkezesek.Count} db étkezés sikeresen hozzáadva!");
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            toastService.ShowError(ex.Message);
+        }
+    }
+    private async Task AddEtkezokToExcel()
+    {
+        try
+        {
+            var etkezesek = await etkezesService.GetEtkezesekByDate(DateTime.Today); 
+            string filePath = excelService.CreateEtkezokExcel(etkezesek);
+            
+            //using (File.Open(filePath, FileMode.Open)) 
+        StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            toastService.ShowError(ex.Message);
+        }
+    }
+    private void OnMessageChange(object sender, OnMessageEventArgs e)
     {
         // Handle the message change event here
         toastService.ShowError(e.Message);
@@ -49,5 +221,6 @@
     public void Dispose()
     {
         etkezesService.OnMessage -= OnMessageChange!;
+        excelService.OnMessage -= OnMessageChange!;
     }
 }

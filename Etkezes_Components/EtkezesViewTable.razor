@@ -1,5 +1,5 @@
 ﻿@inject IDialogService dialogService
-<FluentDataGrid TGridItem="EtkezesView" Items="@Etkezesek.AsQueryable()">
+<FluentDataGrid TGridItem="EtkezesView" Items="@Etkezesek.AsQueryable()" Pagination="pagination" ShowHover="true">
     <PropertyColumn Property="e=>e.UserId" Title="Id" />
     <PropertyColumn Property="e => e.Name" Title="Név" />
     <PropertyColumn Property="e => e.Osztaly" Title="Osztály" />
@@ -13,6 +13,8 @@
     </TemplateColumn>
 
 </FluentDataGrid>
+<FluentPaginator State="@pagination" />
+
 @code {
     [Parameter]
     public List<EtkezesView> Etkezesek { get; set; } = new List<EtkezesView>();
@@ -20,6 +22,7 @@
     public EventCallback<Etkezes> Update { get; set; }
     [Parameter]
     public EventCallback<int> Delete { get; set; }
+    PaginationState pagination = new PaginationState { ItemsPerPage = 8 };
     bool IsEdited = false;
     private async void EditEtkezes(EtkezesView etkezesView)
     {

@@ -7,14 +7,13 @@ using System.Net.Http.Json;
 
 namespace Etkezes_Nyilvantarto.Services
 {
-    public class ApiHelper
+    public class ApiHelper(IConfiguration configuration)
     {
         public string ErrorMessage { get; set; } = String.Empty;
         private static readonly HttpClient client = new();
         //private static readonly string[] scopes = ["api://6091ad40-f274-4e3a-813b-a9498817fd69/access_as_user"];
-
         //protected static string URI = "http://localhost:7025/";
-        protected static string URI = "http://192.168.10.66:5000/"; //ISS
+        readonly string URI = configuration["ApiUrl"] ?? "http://localhost:5231/"; //ISS
         //private string? _token;
         //private readonly DateTime _tokenExpiration;
         //private async Task CreateAuthorizationHeaderForUserAsync()
@@ -23,7 +22,7 @@ namespace Etkezes_Nyilvantarto.Services
 
         //    client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("bearer", _token.Substring(6));
         //}
-        public event EventHandler<ErrorMessageEventArg> OnErrorMessage;
+        public event EventHandler<OnMessageEventArgs>? OnErrorMessage;
         public async Task<Tv?> Get<Tv>(string uri)
         {
             try
@@ -63,9 +62,12 @@ namespace Etkezes_Nyilvantarto.Services
                         if (r?.Success ?? false)
                         {
                             ErrorMessage = r.Message;
-                            OnErrorMessage?.Invoke(this, new(response.StatusCode.ToString(), r.Message));
+                            OnErrorMessage?.Invoke(this, new OnMessageEventArgs(r.Message, ((int)response.StatusCode)));
                         }
-                        else ErrorMessage = r?.Message ?? "Null eredmény lett a hiba üzenet";
+                        else
+                        {
+                            ErrorMessage = r?.Message ?? "Null eredmény lett a hiba üzenet";
+                        }
                     }
                     else ErrorMessage = "Nem elérhető a szerver!";
                     return default;
@@ -73,7 +75,7 @@ namespace Etkezes_Nyilvantarto.Services
                 else
                 {
                     ErrorMessage = response.StatusCode.ToString() + " : " + response.RequestMessage;
-                    OnErrorMessage?.Invoke(this, new(response.StatusCode.ToString(), ErrorMessage));
+                    OnErrorMessage?.Invoke(this, new OnMessageEventArgs(ErrorMessage, ((int)response.StatusCode)));
                     return default;
                 }
             }
@@ -82,7 +84,7 @@ namespace Etkezes_Nyilvantarto.Services
                 //client.CancelPendingRequests();
                 //client.Dispose();
                 ErrorMessage = "Nem elérhető a szerver! Hibaüzenet: " + e.Message;
-                OnErrorMessage?.Invoke(this, new(e.StatusCode.ToString(), e.Message));
+                OnErrorMessage?.Invoke(this, new OnMessageEventArgs(e.Message, ((int?)e.StatusCode ?? 0)));
                 return default;
             }
             catch (Exception e)
@@ -90,7 +92,7 @@ namespace Etkezes_Nyilvantarto.Services
                 client.CancelPendingRequests();
                 //client.Dispose();
                 ErrorMessage = "Hiba történt! Az üzenet: " + e.Message;
-                OnErrorMessage?.Invoke(this, new(e.HResult.ToString(), e.Message));
+                OnErrorMessage?.Invoke(this, new OnMessageEventArgs(e.Message, e.HResult));
                 return default;
             }
         }
@@ -135,13 +137,24 @@ namespace Etkezes_Nyilvantarto.Services
                     ErrorMessage = r?.Message ?? "Null eredmény lett a hiba üzenet";
                 }
                 else ErrorMessage += "Nem elérhető a szerver!";
+                OnErrorMessage?.Invoke(this, new OnMessageEventArgs(ErrorMessage, ((int)response.StatusCode)));
                 return default;
             }
             else
             {
-                ErrorMessage = response.StatusCode.ToString() + " : " + response.RequestMessage;
-                var message = await response.Content.ReadAsStringAsync();
-                ErrorMessage += message;
+                valasz = await response.Content.ReadAsStringAsync();
+                if (!string.IsNullOrEmpty(valasz) && valasz.Contains("Message", StringComparison.OrdinalIgnoreCase))
+                {
+                    var r = JsonConvert.DeserializeObject<MainResponse>(valasz);
+                    OnErrorMessage?.Invoke(this, new OnMessageEventArgs(r?.Message ?? "Null eredmény lett a hiba üzenet", 600));
+                }
+                else
+                {
+                    ErrorMessage = response.StatusCode.ToString() + " : " + response.RequestMessage;
+                    var message = await response.Content.ReadAsStringAsync();
+                    ErrorMessage += message;
+                    OnErrorMessage?.Invoke(this, new OnMessageEventArgs(ErrorMessage, ((int)response.StatusCode)));
+                }
             }
             return default;
         }

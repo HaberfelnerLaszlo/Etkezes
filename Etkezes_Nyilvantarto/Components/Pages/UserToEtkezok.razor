@@ -11,8 +11,8 @@
     <SelectOsztaly OnSelectOsztaly="SelectOsztaly"></SelectOsztaly>
     <FluentDatePicker @bind-Value="@datum" @bind-Value:after="OnDateChanged" Label="Dátum" DisabledDateFunc="@(date => date < DateTime.Today)"></FluentDatePicker>
     <FluentSwitch @bind-Value="onlyEtkezok" Label="Csak étkezők?" @bind-Value:after="@(()=>LoadUsers())"></FluentSwitch>
-    <FluentCounterBadge Count="savedEtkezok.Count" BackgroundColor="@Color.Info" Color="Color.Fill" >
-    <FluentButton OnClick="@(async () => {await usersEtkezes!.Changing(); await SaveToEtkezes(savedEtkezok);})">Mentés</FluentButton>
+    <FluentCounterBadge Count="editedEtkezok.Count" BackgroundColor="@Color.Info" Color="Color.Fill" >
+    <FluentButton OnClick="@(async () => {await usersEtkezes!.Changing(); await SaveToEtkezes(editedEtkezok);})">Mentés</FluentButton>
     </FluentCounterBadge>
     @*<FluentButton OnClick="AddUsers">Diákok feltöltése</FluentButton>*@
 </FluentStack> 
@@ -34,6 +34,7 @@ else
 @code {
     bool IsselectedOsztaly = false, onlyEtkezok =true;
     List<UserEtkezoView> userEtkezok = new List<UserEtkezoView>();
+    List<UserEtkezoView> editedEtkezok = new List<UserEtkezoView>();
     List<UserEtkezoView> savedEtkezok = new List<UserEtkezoView>();
     string selectedOsztaly = string.Empty;
     DateTime? datum = DateTime.Today; 
@@ -65,7 +66,7 @@ else
         }
         if (userEtkezok.Any(u => u.Darab > 0 && !u.IsSaved))
         {
-            savedEtkezok.AddRange(userEtkezok.Where(u => u.Darab > 0 && !u.IsSaved).ToList());
+            editedEtkezok.AddRange(userEtkezok.Where(u => u.Darab > 0 && !u.IsSaved).ToList());
         }
         userEtkezok.Clear();
         if (onlyEtkezok)
@@ -144,7 +145,7 @@ else
             };
             etkezesek.Add(etkezes);
         }
-        savedEtkezok.Clear();
+        editedEtkezok.Clear();
         if (updatedEtkezes.Count > 0)
         {
             foreach (var etkezes in updatedEtkezes)
@@ -193,15 +194,15 @@ else
     {
         foreach (var edited in args)
         {
-            if (savedEtkezok.Any(u => u.Id == edited.Id))
+            if (editedEtkezok.Any(u => u.UserId == edited.UserId))
             {
-                var user = savedEtkezok.First(u => u.Id == edited.Id);
-                user.IsSaved = true;
+                var user = editedEtkezok.First(u => u.UserId == edited.UserId);
+                user.IsSaved = edited.IsSaved;
                 user.Menu = edited.Menu;
                 user.Adag = edited.Adag;
                 user.Darab = edited.Darab;
             }
-            else{savedEtkezok.Add(edited);
+            else{editedEtkezok.Add(edited);
             }
         }
         StateHasChanged();
@@ -284,7 +285,7 @@ else
         userService.OnMessageUserServiceEvent -= OnMessageChange!;
     }
 
-    private void OnMessageChange(object sender, MessageUserServiceEventArg arg)
+    private void OnMessageChange(object sender, OnMessageEventArgs arg)
     {
         toastService.ShowError(arg.Message);
     }

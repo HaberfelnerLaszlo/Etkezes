@@ -35,11 +35,11 @@ builder.Services.AddScoped<DataService>();
 builder.Services.AddSingleton<ApiHelper>();
 builder.Services.AddSingleton<EtkezesService>();
 builder.Services.AddSingleton<SyncService>();
-//builder.WebHost.ConfigureKestrel(options =>
-//{
-//    options.ListenAnyIP(6001);
-//    options.ListenLocalhost(6000);
-//});
+builder.WebHost.ConfigureKestrel(options =>
+{
+    options.ListenAnyIP(6001);
+    options.ListenLocalhost(6000);
+});
 var app = builder.Build();
 
 app.MapDefaultEndpoints();
@@ -52,7 +52,7 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
 }
 app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
-app.UseHttpsRedirection();
+//app.UseHttpsRedirection();
 
 app.UseAntiforgery();
 

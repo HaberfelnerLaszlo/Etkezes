@@ -4,7 +4,7 @@
     {
         public static void MapRootEndpoints(this WebApplication app)
         {
-            app.MapGet("/", () => "Welcome to the Etkezes API! Verzió: 1.0 Dátum: 2026-02-19").WithName("Root");
+            app.MapGet("/", () => "Welcome to the Etkezes API! Verzió: 0.6.6 Dátum: 2026-04-05");
         }
     }
 }

@@ -24,11 +24,11 @@ namespace Etkezes_API.Services
         }
         public async Task<List<Etkezes>> GetAllByDatum(DateTime date)
         {
-            return await _context.Etkezesek.Where(e => e.Datum == date).AsNoTracking().ToListAsync();
+            return await _context.Etkezesek.Include(e => e.User).Where(e => e.Datum == date).AsNoTracking().ToListAsync();
         }
         public async Task<List<EtkezokView>?> GetAllByToday()
         {
-            var etkezesek = await _context.Etkezesek.Include(e => e.User).Where(e => e.Datum == DateTime.Today).AsNoTracking().Select(e => new EtkezokView
+            var etkezesek = await _context.Etkezesek.Include(e => e.User).Where(e => e.Datum == DateTime.Today && e.Elfogyasztva == false).AsNoTracking().Select(e => new EtkezokView
             {
                 Menu = e.Menu,
                 UserId = e.UserId,
@@ -42,6 +42,14 @@ namespace Etkezes_API.Services
         {
             try
             {
+                ErrorMessage=string.Empty;
+                if (_context.Etkezesek.Any(et => et.UserId == e.UserId && et.Datum == e.Datum))
+                {
+                    var etkezes = await _context.Etkezesek.FirstAsync(et => et.UserId == e.UserId && et.Datum == e.Datum);
+                    _context.Update<Etkezes>(etkezes);
+                    _context.SaveChanges();
+                    return true;
+                }
                 _context.Etkezesek.Add(e);
                 await _context.SaveChangesAsync();
                 return true;
@@ -52,10 +60,12 @@ namespace Etkezes_API.Services
                 return false;
             }
         }
+
         public async Task<Etkezes?> Update(Etkezes et, int id)
         {
             try
             {
+                ErrorMessage = string.Empty;
                 var exitsEtkezes = await _context.Etkezesek.FindAsync(id);
                 if (exitsEtkezes == null)
                 {
@@ -113,6 +123,38 @@ namespace Etkezes_API.Services
                 Name = e.User.Name,
                 Osztaly = e.User.Osztaly
             }).ToListAsync();
+        }
+
+        internal async Task<bool> DeleteMaiEtkezesAsync(long id)
+        {
+            return await _context.Etkezesek.Where(e => e.UserId == id && e.Datum == DateTime.Today).ExecuteDeleteAsync() >0;
+        }
+
+        internal bool Exists(long userId, DateTime datum, out int id)
+        {
+            var etkezes = _context.Etkezesek.FirstOrDefault(e => e.UserId == userId && e.Datum == datum);
+            if (etkezes != null)
+            {
+                id = etkezes.Id;
+                return true;
+            }
+            id = 0;
+            return false;
+        }
+
+        internal void IsElfogyasztva(long id)
+        {
+            var etkezesek = _context.Etkezesek.Where(e => e.UserId == id && e.Datum == DateTime.Today);
+            if(etkezesek.Count() > 0)
+            {
+                foreach (var e in etkezesek)
+                {
+                    e.Elfogyasztva = true;
+                    e.Updated = DateTime.UtcNow;
+                }
+                _context.SaveChanges();
+            }
+            //await _context.SaveChangesAsync();
         }
     }
 }

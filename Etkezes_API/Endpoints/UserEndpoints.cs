@@ -9,15 +9,25 @@ namespace Etkezes_API.Endpoints
         static MainResponse response = new MainResponse();
         public static void MapUserEndpoints(this WebApplication app)
         {
-            app.MapGet("/users", (UserService userService) => GetUsers(userService)).WithName("GetUsers");
-            app.MapGet("/users/{osztaly}", (string osztaly, UserService userService) => GetUsersByOsztalyAsync(osztaly, userService));
-            app.MapGet("/user/{id}", (long id, UserService userService) => GetUserById(id, userService)).WithName("GetUserByIdAsync");
-            app.MapGet("/user/update/{date}", (DateTime date, UserService userService) => GetUsersByUpDate(date, userService)).WithName("GetUserByUpDate");
-            app.MapPost("/user", (UserService userService, User user) => CreateUser(userService, user)).WithName("CreateUserAsync");
-            app.MapPut("/user/{id}", (UserService userService, long id, User user) => UpdateUser(userService, id, user)).WithName("UpdateUserAsync");
-            app.MapDelete("/user/{id}", (UserService userService, long id) => DeleteUser(userService, id)).WithName("DeleteUserAsync");
+            try
+            {
+                app.MapGet("/users", (UserService userService) => GetUsers(userService)).WithName("GetUsers");
+                app.MapGet("/users/{osztaly}", (string osztaly, UserService userService) => GetUsersByOsztalyAsync(osztaly, userService));
+                app.MapGet("/user/{id}", (long id, UserService userService) => GetUserById(id, userService)).WithName("GetUserByIdAsync");
+                app.MapGet("/user/update/{date}", (DateTime date, UserService userService) => GetUsersByUpDate(date, userService)).WithName("GetUserByUpDate");
+                app.MapPost("/user", (UserService userService, User user) => CreateUser(userService, user)).WithName("CreateUserAsync");
+                app.MapPost("/users", (UserService userService, List<User> users) => CreateUsers(userService, users)).WithName("CreateUsersAsync");
+                app.MapPut("/user/{id}", (UserService userService, long id, User user) => UpdateUser(userService, id, user)).WithName("UpdateUserAsync");
+                app.MapDelete("/user/{id}", (UserService userService, long id) => DeleteUser(userService, id)).WithName("DeleteUserAsync");
+            }
+            catch (Exception ex)
+            {
+                response.Clear();
+                response.Success = false;
+                response.Message = ex.Message;
+                return;
+            }
         }
-
         private static async Task<IResult> GetUsersByOsztalyAsync(string osztaly, UserService userService)
         {
             response.Clear();
@@ -40,7 +50,7 @@ namespace Etkezes_API.Endpoints
         private static async Task<IResult> GetUserById(long id, UserService userService)
         {
             response.Clear();
-            var user = await userService.GetUserByIdAsync(id);
+            var user = userService.GetUserByIdAsync(id);
             response.Success = user != null;
             response.Data = user;
             return await Task.FromResult(Results.Ok(response));
@@ -67,6 +77,26 @@ namespace Etkezes_API.Endpoints
             response.Message = userService.ErrorMessage;
             return await Task.FromResult(Results.BadRequest(response));
         }
+        private static async Task<IResult> CreateUsers(UserService userService, List<User> users)
+        {
+            try
+            {
+                response.Clear();
+                foreach (var u in users)
+                {
+                        response.Success = await userService.CreateUserAsync(u);
+                }
+                response.Data= users;
+                return await Task.FromResult(Results.Ok(response));
+            }
+            catch (Exception ex)
+            {
+                response.Success = false;
+                response.Message= ex.Message;
+                return await Task.FromResult(Results.BadRequest(response));
+            }
+        }
+
         private static async Task<IResult> UpdateUser(UserService userService, long id, User user)
         {
             response.Clear();

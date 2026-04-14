@@ -33,7 +33,7 @@
         }
         StateHasChanged();
     }
-    private void OnMessageChange(object sender, OnMessageEtkezesEventArgs e)
+    private void OnMessageChange(object sender, OnMessageEventArgs e)
     {
         // Handle the message change event here
         toastService.ShowError(e.Message);

@@ -26,11 +26,11 @@ namespace Etkezes_Models
         /// <summary>
         /// Létrehozva: Az az időpont, amikor a felhasználó adatai először létre lettek hozva a rendszerben. Ez általában akkor történik, amikor egy új felhasználó regisztrál vagy amikor egy adminisztrátor létrehoz egy új felhasználói fiókot. Ez az időpont segít nyomon követni, hogy mikor került be a rendszerbe az adott felhasználó.
         /// </summary>
-        public DateTime Created { get; set; } = DateTime.Now;
+        public DateTime Created { get; set; } = DateTime.UtcNow;
         /// <summary>
         /// Feltöltve: Az az időpont, amikor a felhasználó adatai utoljára feltöltésre kerültek a rendszerbe. Ez lehet manuális vagy automatikus feltöltés eredménye is, és segít nyomon követni, hogy mikor történt az utolsó adatfrissítés a felhasználóval kapcsolatban.
         /// </summary>
-        public DateTime Uploaded { get; set; }
+        public DateTime Uploaded { get; set; } = DateTime.UtcNow;
         /// <summary>
         /// Frissítve: Az az időpont, amikor a felhasználó adatai utoljára módosításra kerültek a rendszerben. Ez lehet manuális vagy automatikus frissítés eredménye is, és segít nyomon követni, hogy mikor történt az utolsó adatváltoztatás a felhasználóval kapcsolatban.
         /// </summary>

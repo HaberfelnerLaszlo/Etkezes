@@ -66,7 +66,7 @@
                     <FluentButton Appearance="Appearance.Neutral" OnClick="async () => { errorMessage = string.Empty; await syncService.GetSyncDates(); }">Szinkronizáció</FluentButton>
                     <FluentButton Appearance="Appearance.Neutral" OnClick="@(() => navigationManager.NavigateTo("/reg"))">Regisztráció</FluentButton>
                     <FluentButton Appearance="Appearance.Neutral" OnClick="@(() => navigationManager.NavigateTo("/loginusers"))">Felhasználók</FluentButton>
-                    <FluentButton Appearance="Appearance.Neutral" OnClick="@(() => navigationManager.NavigateTo("/users"))">Étkezők</FluentButton>
+                    <FluentButton Appearance="Appearance.Neutral" OnClick="@(() => navigationManager.NavigateTo("/users"))">Diákok</FluentButton>
                </FluentStack>
             }
         </FluentStack>
@@ -84,11 +84,11 @@
         </FluentGrid>
     </FluentBodyContent>
     <FluentFooter>
-        2026.03.22 19:42
+        2026.04.05 19:42
         <FluentSpacer/>
         <p>@message</p>
         <FluentSpacer/>
-        Verzió: 0.6.1
+        Verzió: 0.6.6
     </FluentFooter>
 </FluentLayout>
 @code {
@@ -156,7 +156,7 @@
             // Handle error messages
             if (e.Code == -17) // Assuming 100 is the code for fingerprint device connection error
             {
-                if (!ClickedMatching())
+                if (!await ClickedMatching())
                 {
                     toastService.ShowCommunicationToast(new ToastParameters<CommunicationToastContent>()
                         {
@@ -210,12 +210,12 @@
             navigationManager.NavigateTo("/fpreg");
         }
     }
-    private bool ClickedMatching()
+    private async Task<bool> ClickedMatching()
     {
         var res=fpService.Matching(fingerPrints);
         if (res > 0)
         {
-            if (LoginUserIdentify(res) || UserIdentify(res)) return true;
+            if (LoginUserIdentify(res) || await UserIdentify(res)) return true;
         }
         return false;
     }
@@ -226,10 +226,10 @@
     //     Console.WriteLine($"Registration Success: {message}"); 
     // }
     // Add this method to handle the SuccessIdentification event
-    private void OnIdentificationSuccess(object? sender, FPSuccessIdentificationEventArgs e)
+    private async void OnIdentificationSuccess(object? sender, FPSuccessIdentificationEventArgs e)
     {
         if(LoginUserIdentify(e.Fid)) return;
-        UserIdentify(e.Fid);
+        await UserIdentify(e.Fid);
     }
     private bool LoginUserIdentify(int fpId)
     {
@@ -238,8 +238,8 @@
             if (identifiedUser == null || String.IsNullOrWhiteSpace(identifiedUser.UserName))
             {
                 // Handle successful login
-                identifiedUser = loginService.GetUserByFpId(fpId);
-                toastService.ShowSuccess($"Sikeres azonosítás! Üdvözlünk, {identifiedUser.Name}!"); //TODO: Personalizált üdvözlés a felhasználó nevével, belépés felajánlása
+                var identifyUser = loginService.GetUserByFpId(fpId);
+                toastService.ShowSuccess($"Sikeres azonosítás! Üdvözlünk, {identifyUser.Name}!"); //TODO: Personalizált üdvözlés a felhasználó nevével, belépés felajánlása
                 toastService.ShowCommunicationToast(new ToastParameters<CommunicationToastContent>()
                 {
                     Intent = ToastIntent.Error,
@@ -247,7 +247,7 @@
                     TopCTAType = ToastTopCTAType.Timestamp,
                     Timeout = 8000,
                     PrimaryAction = "Igen",
-                    OnPrimaryAction = EventCallback.Factory.Create<ToastResult>(this, () => { dataService.SetLoginUser(identifiedUser); StateHasChanged(); }),
+                    OnPrimaryAction = EventCallback.Factory.Create<ToastResult>(this, () => { identifiedUser = identifyUser; dataService.SetLoginUser(identifiedUser); StateHasChanged(); }),
                     Content = new CommunicationToastContent()
                     {
                         Details = "Szeretne belépni?",
@@ -270,7 +270,7 @@
         }
         return false;
     }
-    private bool UserIdentify(int fpId)
+    private async Task<bool> UserIdentify(int fpId)
     {
         if (userService.HandleSuccessfulIdentification(fpId))
         {
@@ -289,8 +289,14 @@
                 {
                     AdatRendezo(new Adat("images/red-x-line-icon.svg", adat.Name, ""));
                 }
+                else if (etkezo.Elfogyasztva)
+                {
+                    AdatRendezo(new Adat("images/red-x-line-icon.svg", adat.Name, ""));
+                    toastService.ShowWarning($"{adat.Name} étkezést már elfogyasztotta! FpId: {fpId}");
+                }
                 else
                 {
+                    await etkezesService.IsElfogyasztva(etkezo.UserId);
                     if (etkezo.Adag.Contains("kis", StringComparison.CurrentCultureIgnoreCase))
                     {
                         if (etkezo.Menu.Contains("A")) AdatRendezo(new Adat("images/bubble-letter-a-lowercase-green-icon.svg", etkezo.Name, etkezo.Menu));
@@ -302,7 +308,7 @@
                         else AdatRendezo(new Adat("images/bubble-letter-b-green-icon.svg", etkezo.Name, etkezo.Menu));
                     }
                 }
-                toastService.ShowSuccess("Sikeres azonosítás! Üdvözlünk az étkezők között!");
+                //toastService.ShowSuccess("Sikeres azonosítás! Üdvözlünk az étkezők között!");
             }
             return true;
         }

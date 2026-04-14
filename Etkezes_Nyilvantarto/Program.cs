@@ -17,6 +17,7 @@ builder.Services.AddSingleton<ApiHelper>();
 builder.Services.AddSingleton<UserService>();
 builder.Services.AddSingleton<LoginUserService>();
 builder.Services.AddSingleton<EtkezesService>();
+builder.Services.AddSingleton<ExcelService>();
 
 var app = builder.Build();
 

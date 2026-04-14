@@ -6,7 +6,7 @@
     <FluentButton OnClick="@(() => Users.ForEach(u => u.IsSelected = !u.IsSelected))">Fordítva</FluentButton>
 </FluentStack>
 <FluentDivider></FluentDivider>
-<FluentDataGrid TGridItem="UserEtkezoView" Items="Users.AsQueryable()">
+<FluentDataGrid TGridItem="UserEtkezoView" Items="Users.AsQueryable()" Pagination="pagination" ShowHover="true">
     <TemplateColumn Title="Kiválasztva?">
         <FluentCheckbox @bind-Value="context.IsSelected"/>
     </TemplateColumn>
@@ -22,6 +22,7 @@
 DeleteEtkezes(context))" IconStart="@(new Icons.Regular.Size20.Delete())"/>
     </TemplateColumn>
 </FluentDataGrid>
+<FluentPaginator State="@pagination" />
 <FluentDivider></FluentDivider>
 <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="20">
     <FluentButton OnClick="@(async () => {Users.Where (u => u.IsSelected).ToList().ForEach(u => {u.Menu = "A";u.Darab = 1;}); await Changing();})"> A menü</FluentButton>
@@ -39,11 +40,14 @@ DeleteEtkezes(context))" IconStart="@(new Icons.Regular.Size20.Delete())"/>
     public EventCallback<List<UserEtkezoView>> Changed { get; set; }
     [Parameter]
     public EventCallback<UserEtkezoView> Delete { get; set; }
+    PaginationState pagination = new PaginationState { ItemsPerPage = 8 };
     List<UserEtkezoView> EditedUsers = new();
 
     public async Task Changing()
     {
         EditedUsers.AddRange(Users.Where(u => u.Darab > 0 && !u.IsSaved).ToList());
+        await Changed.InvokeAsync(EditedUsers);
+        EditedUsers.Clear();
     }
     private async void EditUser(UserEtkezoView user)
     {

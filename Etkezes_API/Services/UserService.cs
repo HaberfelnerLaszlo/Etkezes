@@ -13,9 +13,9 @@ namespace Etkezes_API.Services
         {
             return await context.Users.Select(u => u.Name).AsNoTracking().ToListAsync();
         }
-        public async Task<User?> GetUserByIdAsync(long id)
+        public User? GetUserByIdAsync(long id)
         {
-            return await context.Users.FindAsync(id);
+            return context.Users.Find(id);
         }
         public async Task<List<User>> GetUsersByUpDateAsync(DateTime date)
         {
@@ -40,8 +40,19 @@ namespace Etkezes_API.Services
         {
             try
             {
+                var isExistingUser = Exits(user.Id);
+                if (isExistingUser)
+                {
+                    await UpdateUserAsync(user.Id, user);
+                    return true;
+                }
                 context.Users.Add(user);
-                await context.SaveChangesAsync();
+                var result = await context.SaveChangesAsync();
+                if (result <= 0)
+                {
+                    ErrorMessage = "Failed to create user.";
+                    return false;
+                }
                 return true;
             }
             catch (Exception ex)
@@ -55,7 +66,7 @@ namespace Etkezes_API.Services
         {
             try
             {
-                var existingUser = await context.Users.FindAsync(id);
+                User? existingUser = await context.Users.FindAsync(id);
                 if (existingUser == null)
                 {
                     ErrorMessage = "User not found.";
@@ -92,5 +103,9 @@ namespace Etkezes_API.Services
             }
         }
 
+        internal bool Exits(long id)
+        {
+            return context.Users.Any(u => u.Id == id);
+        }
     }
 }

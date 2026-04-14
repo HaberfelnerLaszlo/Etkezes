@@ -14,7 +14,7 @@ namespace Etkezes_Nyilvantarto.Services
             api.OnErrorMessage += OnErrorMessageChanged!;
         }
 
-        private void OnErrorMessageChanged(object sender, ErrorMessageEventArg arg)
+        private void OnErrorMessageChanged(object sender, OnMessageEventArgs arg)
         {
             var err = arg.Message;
         }

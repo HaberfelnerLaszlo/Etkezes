@@ -223,6 +223,7 @@ namespace Etkezes_Ellenor.Services
                             localEtkezes.Menu = etkezes.Menu;
                             localEtkezes.Adag = etkezes.Adag;
                             localEtkezes.Darab = etkezes.Darab;
+                            localEtkezes.Elfogyasztva =false;
                             localEtkezes.Updated = DateTime.UtcNow;
                             dbContext.Etkezesek.Update(localEtkezes);
                         }

@@ -1,5 +1,7 @@
 ﻿@page "/users"
+@using Newtonsoft.Json
 @inject UserService userService
+@inject ExcelService excelService
 @inject IDialogService dialogService
 @inject IToastService toastService
 @implements IDisposable
@@ -97,7 +99,21 @@ else
                     toastService.ShowError("Nem sikerült a Fájl feltöltése!");
                     return;
                 }
-                
+                var createdUsers=excelService.ReadUsers(stream);
+                if(createdUsers.Count == 0)
+                {
+                    toastService.ShowError("Nem megfelelő fájl formátum! Kérem válassza ki a diákok fájlját!");
+                    return;
+                }
+                if(await userService.CreateUsersAsync(createdUsers) is null) 
+                {
+                    toastService.ShowError("Nem sikerült a diákokat elmenteni az adatbázisba!");
+                    return;
+                }
+                if(IsselectedOsztaly)
+                {
+                    users = await userService.GetUsersByOsztaly(users[0].Osztaly);
+                }
             }
         }
         catch (Exception ex)
@@ -110,7 +126,7 @@ else
         userService.OnMessageUserServiceEvent -= OnMessageChange!;
     }
 
-    private void OnMessageChange(object sender, MessageUserServiceEventArg arg)
+    private void OnMessageChange(object sender, OnMessageEventArgs arg)
     {
         toastService.ShowError(arg.Message);
     }

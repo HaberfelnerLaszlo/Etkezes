@@ -12,6 +12,7 @@
     <PackageReference Include="Microsoft.FluentUI.AspNetCore.Components.Emoji" Version="4.14.0" />
     <PackageReference Include="Microsoft.FluentUI.AspNetCore.Components.Icons" Version="4.14.0" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
+    <PackageReference Include="NPOI" Version="2.7.6" />
   </ItemGroup>
 
   <ItemGroup>

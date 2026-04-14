@@ -4,16 +4,16 @@ using Etkezes_Models;
 
 namespace Etkezes_Ellenor.Services
 {
-    public class EtkezesService(EtkezesDBcontext etkezesDB)
+    public class EtkezesService(EtkezesDBcontext etkezesDB, ApiHelper apiHelper)
     {
         public event EventHandler<ErrorEventArgs>? OnError;
         public Etkezok? GetEtkezo(long userId)
         {
             try
             {
-                if (etkezesDB.Etkezesek.Any(e => e.UserId == userId && e.Darab>0))
+                if (etkezesDB.Etkezesek.Any(e => e.UserId == userId && e.Darab>0 && !e.Elfogyasztva))
                 {
-                    var etkezo = etkezesDB.Etkezesek.First(e => e.UserId == userId);
+                    var etkezo = etkezesDB.Etkezesek.First(e => e.UserId == userId && !e.Elfogyasztva);
                     //if (etkezo == null)
                     //{
                     //    
@@ -27,6 +27,19 @@ namespace Etkezes_Ellenor.Services
             {
                 OnError?.Invoke(this, new(ex.Message, ex.HResult.ToString()));
                 return null;
+            }
+        }
+        public async Task IsElfogyasztva(long userId) 
+        {
+            try
+            {
+                etkezesDB.Etkezesek.Find(GetEtkezo(userId)?.Id)?.Elfogyasztva = true;
+                etkezesDB.SaveChanges();
+                await apiHelper.Get<bool>($"etkezes/{userId}");
+            }
+            catch (Exception ex)
+            {
+                OnError?.Invoke(this, new(ex.Message, ex.HResult.ToString()));
             }
         }
     }
