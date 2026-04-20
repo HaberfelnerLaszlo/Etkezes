@@ -5,10 +5,10 @@
 </FluentDialogHeader>
 <FluentDialogBody>
     <FluentStack Orientation="Orientation.Vertical" VerticalAlignment="VerticalAlignment.Center" VerticalGap="20">
-        <FluentNumberField Value="Content.Id" Label="Azonosító"/>
-        <FluentTextField Placeholder="Felhasználónév" Value="@Content.Name" AriaLabel="Név" Label="Név:"/>
+        <FluentNumberField @bind-Value="Content.Id" Label="Azonosító"/>
+        <FluentTextField Placeholder="Felhasználónév" @bind-Value="Content.Name" AriaLabel="Név" Label="Név:"/>
         <SelectOsztaly OnSelectOsztaly="SelectedOsztaly"/>
-        <FluentSwitch Value="@Content.Etkezik" Label="Étkezik?"/>
+        <FluentSwitch @bind-Value="Content.Etkezik" Label="Étkezik?"/>
     </FluentStack>
 </FluentDialogBody>
 <FluentDialogFooter>

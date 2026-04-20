@@ -15,7 +15,7 @@ namespace Etkezes_Ellenor.Services
     public class LoginUserService(EtkezesDBcontext context, IFPService fPService)
     {
         private readonly EtkezesDBcontext _context = context;
-        private readonly IFPService _fPService = fPService;
+        //private readonly IFPService _fPService = fPService;
 
         public List<LoginUser> GetAllUsers()
         {
