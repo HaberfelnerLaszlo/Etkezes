@@ -16,6 +16,11 @@ builder.Services.AddScoped<LoginUserService>();
 builder.Services.AddScoped<UserService>();
 builder.Services.AddScoped<EtkezesService>();
 builder.Services.AddScoped<SyncService>();
+builder.WebHost.ConfigureKestrel(options =>
+{
+    options.ListenAnyIP(7001);
+    options.ListenLocalhost(7000);
+});
 var app = builder.Build();
 
 app.MigrationDb();

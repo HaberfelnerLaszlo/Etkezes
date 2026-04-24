@@ -1,0 +1,64 @@
+﻿@implements IDialogContentComponent<NewLoginUser>
+@inject IToastService toastService
+<FluentDialogHeader>
+    <h4>Felhasználó adatai:</h4>
+</FluentDialogHeader>
+<FluentDialogBody>
+    <FluentEditForm Model="@Content">
+        <FluentStack Orientation="Orientation.Vertical" Gap="10px">
+            <FluentTextField @bind-Value="Content.Name" Label="Név" Required="true" />
+            <FluentSelect TOption="string" @bind-Value="Content.Role" Label="Szerepkör" Required="true">
+                <FluentOption Value="User" Title="Felhasználó" Selected="true">Felhasználó</FluentOption>
+                <FluentOption Value="Admin" Title="Adminisztrátor">Adminisztrátor</FluentOption>
+            </FluentSelect>
+            <FluentTextField @bind-Value="Content.UserName" Label="Felhasználónév" Required="true" TextFieldType="TextFieldType.Text" />
+            <FluentTextField @bind-Value="Content.NewPassword" Label="Jelszó" Required="true" TextFieldType="TextFieldType.Password" />
+            <FluentTextField @bind-Value="Content.ConfirmPassword" Label="Jelszó megerősítése" Required="true" TextFieldType="TextFieldType.Password" />
+
+        </FluentStack>
+    </FluentEditForm>
+</FluentDialogBody>
+<FluentDialogFooter>
+    <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="10">
+        <FluentButton OnClick="Close">Mentés</FluentButton>
+        <FluentButton OnClick="() => Dialog.CancelAsync()">Mégsem</FluentButton>
+    </FluentStack>
+</FluentDialogFooter>
+
+@code {
+    [Parameter]
+    public NewLoginUser Content { get; set; } = default!;
+    [CascadingParameter]
+    public FluentDialog Dialog { get; set; } = default!;
+
+
+    private async void Close()
+    {
+        if (string.IsNullOrWhiteSpace(Content.Name))
+        {
+            toastService.ShowWarning("Nem lehet a Név mező üres!");
+            return;
+        }
+        if (string.IsNullOrWhiteSpace(Content.Role))
+        {
+            toastService.ShowWarning("Nem lehet a Szerepkör mező üres!");
+            return;
+        }
+        if (string.IsNullOrWhiteSpace(Content.UserName))
+        {
+            toastService.ShowWarning("Nem lehet a Felhasználónév mező üres!");
+            return;
+        }
+        if (string.IsNullOrWhiteSpace(Content.NewPassword))
+        {
+            toastService.ShowWarning("Nem lehet a Jelszó mező üres!");
+            return;
+        }
+        if (Content.NewPassword != Content.ConfirmPassword)
+        {
+            toastService.ShowWarning("A jelszó és a megerősítés nem egyezik!");
+            return;
+        }
+        await Dialog.CloseAsync(Content);
+    }
+}

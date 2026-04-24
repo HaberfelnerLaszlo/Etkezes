@@ -1,14 +1,15 @@
 ﻿@inherits LayoutComponentBase
 @inject DataService dataService
+@inject LoginUserService loginUserService
 @inject IDialogService dialogService
 @inject IToastService toastService
- @* <FluentLayout> *@
     <FluentHeader>
         <FluentLabel>Etkezés nyilvántartó</FluentLabel>
         <FluentSpacer/>
         @if (dataService.actualUser != null)
         {
             <FluentLabel>@dataService.actualUser.Name</FluentLabel>
+            <FluentButton OnClick="@(()=>dataService.actualUser = null)">Kijelentkezés</FluentButton>
         }
         else
         {
@@ -17,12 +18,12 @@
     </FluentHeader>
         @Body
     <FluentFooter Style="position:absolute; bottom:30px;width:auto">
-        <span>V:0.6.6</span>
-    <span>2026.04.05</span>
+        <span>V:0.6.7</span>
+        <FluentSpacer Width="20"/>
+    <span>2026.04.21</span>
     </FluentFooter>
     <FluentToastProvider Position="ToastPosition.BottomRight"/>
     <FluentDialogProvider/>
-@* </FluentLayout> *@
 <div id="blazor-error-ui" data-nosnippet>
     An unhandled error has occurred.
     <a href="." class="reload">Reload</a>
@@ -34,11 +35,6 @@
         LoginData? loginData = new();
         DialogParameters parameters = new()
         {
-            // Title = $"Hello {simplePerson.Firstname}",
-            // TitleTypo = Typography.H2,
-            // PrimaryAction = "Yes",
-            // PrimaryActionEnabled = true,
-            // SecondaryAction = "No",
             Width = "500px",
             Modal = true,
             PreventScroll = true
@@ -50,6 +46,18 @@
         if (result.Data is not null)
         {
              loginData= result.Data as LoginData;
+             if (loginData != null)
+             {
+                 var user = await loginUserService.ValidateUser(loginData.UserName, loginData.Password);
+                 if (user != null)
+                 {
+                     dataService.actualUser = user;
+                 }
+                 else
+                 {
+                     toastService.ShowError("Hibás felhasználónév vagy jelszó!");
+                 }
+             }
         }
         else
         {

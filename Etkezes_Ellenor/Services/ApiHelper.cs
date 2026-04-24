@@ -1,20 +1,18 @@
 ﻿using Etkezes_Models;
-
 using Newtonsoft.Json;
-
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 
 namespace Etkezes_Ellenor.Services
 {
-    public class ApiHelper
+    public class ApiHelper(IConfiguration configuration)
     {
         public string ErrorMessage { get; set; } = String.Empty;
         private static readonly HttpClient client = new();
         //private static readonly string[] scopes = ["api://6091ad40-f274-4e3a-813b-a9498817fd69/access_as_user"];
 
-        //protected static string URI = "https://localhost:7192/";
-        protected static string URI = "http://192.168.10.66:5000/";
+        protected string URI = configuration["ApiUrl"]?? "http://192.168.3.1:7001";
+        //protected static string URI = "http://192.168.10.66:5000/";
         //private string? _token;
         //private readonly DateTime _tokenExpiration;
         //private async Task CreateAuthorizationHeaderForUserAsync()

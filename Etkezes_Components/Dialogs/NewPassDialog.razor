@@ -1,0 +1,40 @@
+﻿@implements IDialogContentComponent<string>
+@inject IToastService toastService
+<FluentDialogHeader>
+    <h4>Felhasználó új jelszó beállítása:</h4>
+</FluentDialogHeader>
+<FluentDialogBody>
+        <FluentStack Orientation="Orientation.Vertical" Gap="10px">
+            <FluentTextField @bind-Value="Content" Label="Új jelszó" Required="true" TextFieldType="TextFieldType.Password" />
+            <FluentTextField @bind-Value="newPass" Label="Új jelszó megerősítése" Required="true" TextFieldType="TextFieldType.Password" />
+        </FluentStack>
+</FluentDialogBody>
+<FluentDialogFooter>
+    <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="10">
+        <FluentButton OnClick="Close">Mentés</FluentButton>
+        <FluentButton OnClick="() => Dialog.CancelAsync()">Mégsem</FluentButton>
+    </FluentStack>
+</FluentDialogFooter>
+
+@code {
+    [Parameter]
+    public string Content { get; set; } = string.Empty;
+    [CascadingParameter]
+    public FluentDialog Dialog { get; set; } = default!;
+    string newPass = string.Empty;
+
+    private async void Close()
+    {
+        if (string.IsNullOrWhiteSpace(Content))
+        {
+            toastService.ShowWarning("Nem lehet a jelszómező üres!");
+            return;
+        }
+        if (Content != newPass)
+        {
+            toastService.ShowWarning("A jelszavak nem egyeznek!");
+            return;
+        }
+        await Dialog.CloseAsync(Content);
+    }
+}

@@ -19,24 +19,24 @@ namespace Etkezes_Nyilvantarto.Services
             OnMessage?.Invoke(this, arg);
         }
 
-        public async Task<bool> ValidateUser(string username, string password)
+        public async Task<LoginUser?> ValidateUser(string username, string password)
         {
             var user =await api.Get<LoginUser>($"/loginuser/valid/{username}");
             if (user == null)
             {
-                return false;
+                return null;
             }
             if (!string.IsNullOrEmpty(user.UserName))
             {
                 if (!string.IsNullOrEmpty(password))
                 {
                     byte[] hash = HashPassword(password, user.Id);
-                    return hash.SequenceEqual(user.Password);
+                    if (hash.SequenceEqual(user.Password)) return user;
                 }
             }
-            return false;
+            return null;
         }
-        private byte[] HashPassword(string password, Guid userId)
+        public byte[] HashPassword(string password, Guid userId)
         {
             try
             {
@@ -75,7 +75,54 @@ namespace Etkezes_Nyilvantarto.Services
                 return new List<LoginUser>();
             }
         }
-
+        public async Task<bool> CreateUser(string username, string password)
+        {
+            try
+            {
+                var newUser = new LoginUser
+                {
+                    Id = Guid.NewGuid(),
+                    UserName = username,
+                    Password = HashPassword(password, Guid.NewGuid())
+                };
+                var result = await api.Post("/loginuser", newUser);
+                return result != null;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error creating user: {ex.Message}");
+                OnMessage?.Invoke(this, new OnMessageEventArgs($"Error creating user: {ex.Message}", 103));
+                return false;
+            }
+        }
+        public async Task<bool> UpdateUser(LoginUser updatedUser)
+        {
+            try
+            {
+                var result = await api.Put($"/loginuser/{updatedUser.Id}", updatedUser);
+                return result != null;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error updating user: {ex.Message}");
+                OnMessage?.Invoke(this, new OnMessageEventArgs($"Error updating user: {ex.Message}", 105));
+                return false;
+            }
+        }
+        public async Task<bool> DeleteUser(Guid userId)
+        {
+            try
+            {
+                var result = await api.Delete($"/loginuser/{userId}");
+                return result;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error deleting user: {ex.Message}");
+                OnMessage?.Invoke(this, new OnMessageEventArgs($"Error deleting user: {ex.Message}", 104));
+                return false;
+            }
+        }
         public void Dispose()
         {
             api.OnErrorMessage -= OnErrorMessageChanged!;
