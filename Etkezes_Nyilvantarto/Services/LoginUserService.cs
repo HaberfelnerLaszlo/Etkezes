@@ -24,6 +24,7 @@ namespace Etkezes_Nyilvantarto.Services
             var user =await api.Get<LoginUser>($"/loginuser/valid/{username}");
             if (user == null)
             {
+                OnMessage?.Invoke(this, new OnMessageEventArgs("User not found.", 100));
                 return null;
             }
             if (!string.IsNullOrEmpty(user.UserName))
@@ -32,6 +33,7 @@ namespace Etkezes_Nyilvantarto.Services
                 {
                     byte[] hash = HashPassword(password, user.Id);
                     if (hash.SequenceEqual(user.Password)) return user;
+                    else OnMessage?.Invoke(this, new OnMessageEventArgs($"Invalid password. {BitConverter.ToString(hash)}", 100));
                 }
             }
             return null;

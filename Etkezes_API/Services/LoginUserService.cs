@@ -23,7 +23,7 @@ namespace Etkezes_API.Services
         }
         internal async Task<LoginUser?> GetLoginUserByUserNameAsync(string username)
         {
-            return await dbContext.LoginUsers.FindAsync(username);
+            return await dbContext.LoginUsers.FirstOrDefaultAsync(u => u.UserName == username);
         }
         public async Task<bool> CreateLoginUserAsync(LoginUser loginUser)
         {

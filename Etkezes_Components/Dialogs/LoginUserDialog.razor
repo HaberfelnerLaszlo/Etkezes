@@ -8,10 +8,10 @@
         <FluentStack Orientation="Orientation.Vertical" Gap="10px">
             <FluentTextField @bind-Value="Content.Name" Label="Név" Required="true" />
             <FluentSelect TOption="string" @bind-Value="Content.Role" Label="Szerepkör" Required="true">
-                <FluentOption Value="User" Title="Felhasználó" Selected="true">Felhasználó</FluentOption>
+                <FluentOption Value="User" Title="Felhasználó">Felhasználó</FluentOption>
                 <FluentOption Value="Admin" Title="Adminisztrátor">Adminisztrátor</FluentOption>
             </FluentSelect>
-            <FluentTextField Value="Content.UserName" Label="Felhasználónév" ReadOnly="true" TextFieldType="TextFieldType.Text" />
+            <FluentTextField Value="@Content.UserName" Label="Felhasználónév" ReadOnly="true" TextFieldType="TextFieldType.Text" />
         </FluentStack>
     </FluentEditForm>
 </FluentDialogBody>
