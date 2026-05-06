@@ -2,12 +2,12 @@
 @inject NavigationManager navi
 @inject DataService dataService
 <PageTitle>Kezdőlap</PageTitle>
-@* @if (dataService.actualUser != null)
+@if (dataService.actualUser != null)
 {
- *@    <FluentStack Orientation="Orientation.Horizontal"HorizontalAlignment="HorizontalAlignment.Start" HorizontalGap="30">
-@*         @if (dataService.actualUser.Role.Equals("Admin"))
+    <FluentStack Orientation="Orientation.Horizontal"HorizontalAlignment="HorizontalAlignment.Start" HorizontalGap="30">
+         @if (dataService.actualUser.Role.Equals("Admin"))
         {
- *@            <FluentButton OnClick="@(() => navi.NavigateTo("/loginusers"))" Style="width:150px; height:150px">
+            <FluentButton OnClick="@(() => navi.NavigateTo("/loginusers"))" Style="width:150px; height:150px">
                 <ChildContent>
                     <FluentEmoji Value="@(new Emojis.PeopleBody.Color.Light.ManMechanic())" Width="128px" />
                     <FluentLabel>Felhasználók</FluentLabel>
@@ -19,8 +19,8 @@
                     <FluentLabel>Diákok</FluentLabel>
                 </ChildContent>
             </FluentButton>
-@*         }
- *@        <FluentButton OnClick="@(() => navi.NavigateTo("/userstoetkezo"))" Style="width:150px; height:150px">
+         }
+        <FluentButton OnClick="@(() => navi.NavigateTo("/userstoetkezo"))" Style="width:150px; height:150px">
             <ChildContent>
                 <FluentEmoji Value="@(new Emojis.PeopleBody.Color.Light.Cook())" Width="128px" />
                 <FluentLabel>Étkezők</FluentLabel>
@@ -33,8 +33,7 @@
             </ChildContent>
         </FluentButton>
     </FluentStack>
-@* }
+}
 else{
     <FluentLabel>Jelentkezz be a folytatáshoz!</FluentLabel>
 }
- *@

@@ -4,6 +4,6 @@ namespace Etkezes_Nyilvantarto.Services
 {
     public class DataService
     {
-        public LoginUser? actualUser =new();
+        public LoginUser? actualUser;
     }
 }

@@ -23,6 +23,7 @@ namespace Etkezes_API.Endpoints
             response.Clear();
             var user= await loginUserService.GetLoginUserByUserNameAsync(username);
             if (user != null) { 
+                response.Success = true;
                 response.Data = user;
                 return await Task.FromResult(Results.Ok(response));
             }

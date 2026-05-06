@@ -85,7 +85,7 @@ else
             PreventScroll = true
         };
 
-        IDialogReference dialog = await dialogService.ShowDialogAsync<NewLoginUserDialog>(user, parameters);
+        IDialogReference dialog = await dialogService.ShowDialogAsync<LoginUserDialog>(user, parameters);
         DialogResult? result = await dialog.Result;
         try
         {
@@ -141,6 +141,7 @@ else
                 }
                 user.Password = req;
                 if (!await loginService.UpdateUser(user)) toastService.ShowError("Nem sikerült a felhasználó jelszavát elmenteni az adatbázisba!");
+                else toastService.ShowSuccess("Sikeresen frissítette a felhasználó jelszavát!");
             }
         }
         catch (Exception ex)

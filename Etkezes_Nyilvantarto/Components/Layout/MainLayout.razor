@@ -3,13 +3,17 @@
 @inject LoginUserService loginUserService
 @inject IDialogService dialogService
 @inject IToastService toastService
+@inject NavigationManager navigationManager
     <FluentHeader>
-        <FluentLabel>Etkezés nyilvántartó</FluentLabel>
+        <FluentButton OnClick="@(() => navigationManager.NavigateTo("/"))">Kezdőlap</FluentButton>
         <FluentSpacer/>
-        @if (dataService.actualUser != null)
+        <FluentLabel Color="Color.Fill">Etkezés nyilvántartó</FluentLabel>
+        <FluentSpacer/>
+        @if (dataService.actualUser != null && !string.IsNullOrEmpty(dataService.actualUser.Name))
         {
-            <FluentLabel>@dataService.actualUser.Name</FluentLabel>
-            <FluentButton OnClick="@(()=>dataService.actualUser = null)">Kijelentkezés</FluentButton>
+            <FluentLabel Color="Color.Fill">@dataService.actualUser.Name</FluentLabel>
+            <FluentSpacer Width="20" />
+            <FluentButton OnClick="@(async () => { dataService.actualUser = null; navigationManager.NavigateTo("/"); /*await InvokeAsync(StateHasChanged);*/ })">Kijelentkezés</FluentButton>
         }
         else
         {
@@ -20,7 +24,7 @@
     <FluentFooter Style="position:absolute; bottom:30px;width:auto">
         <span>V:0.6.7</span>
         <FluentSpacer Width="20"/>
-    <span>2026.04.21</span>
+    <span>2026.04.25</span>
     </FluentFooter>
     <FluentToastProvider Position="ToastPosition.BottomRight"/>
     <FluentDialogProvider/>
@@ -45,13 +49,15 @@
 
         if (result.Data is not null)
         {
-             loginData= result.Data as LoginData;
-             if (loginData != null)
-             {
-                 var user = await loginUserService.ValidateUser(loginData.UserName, loginData.Password);
-                 if (user != null)
-                 {
-                     dataService.actualUser = user;
+            loginData= result.Data as LoginData;
+            if (loginData != null)
+            {
+                var user = await loginUserService.ValidateUser(loginData.UserName, loginData.Password);
+                if (user != null)
+                {
+                    dataService.actualUser = user;
+                    if (navigationManager != null) navigationManager.NavigateTo(navigationManager.Uri);
+                    await InvokeAsync(StateHasChanged);
                  }
                  else
                  {
