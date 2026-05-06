@@ -549,32 +549,46 @@ namespace FingerPrintService
 
         int IFPService.Matching(List<FingerPrintData> fingerPrints)
         {
+            int fpId = 0;
             foreach (var fp in fingerPrints)
             {
                 RegTmp = Base64Converter.ToBytes(fp.FingerTemplate1).Bytes;
                 cbRegTmp=RegTmp.Length;
                 int fid = 0;
+                int aktRet=0;
                 int ret = ZkfpLinux.ZKFPM_DBMatch(mDBHandle, CapTmp,cbCapTmp, RegTmp,cbRegTmp, ref fid);
-                if (0 < ret)
+                if (aktRet < ret)
                 {
                     SuccessInfo = "Sikeres ujjlenyomat egyeztetés, score=" + ret + "!";
-                    MessageChanged?.Invoke(this, new FPMessageChangedEventArgs(SuccessInfo, false, fid));
-                    return fp.FpId;
+                    //MessageChanged?.Invoke(this, new FPMessageChangedEventArgs(SuccessInfo, false, fid));
+                    fpId = fp.FpId;
+                    //return fp.FpId;
                 }
                 else if (!string.IsNullOrWhiteSpace(fp.FingerTemplate2))
                 {
                     RegTmp = Base64Converter.ToBytes(fp.FingerTemplate2).Bytes;
                     cbRegTmp=RegTmp.Length;
                     ret = ZkfpLinux.ZKFPM_DBMatch(mDBHandle, CapTmp,cbCapTmp, RegTmp,cbRegTmp, ref fid);
-                    if (0 < ret)
+                    if (aktRet < ret)
                     {
                         SuccessInfo = "Sikeres ujjlenyomat egyeztetés, score=" + ret + "!";
-                        MessageChanged?.Invoke(this, new FPMessageChangedEventArgs(SuccessInfo, false, fid));
-                        return fp.FpId;
+                        //MessageChanged?.Invoke(this, new FPMessageChangedEventArgs(SuccessInfo, false, fid));
+                        fpId = fp.FpId;
+                        //return fp.FpId;
                     }
                 }
             }
-            return 0;
+            if (fpId == 0)
+            {
+                ErrorInfo = "Sikertelen ujjlenyomat egyeztetés, nincs egyezés az adatbázisban!";
+                MessageChanged?.Invoke(this, new FPMessageChangedEventArgs(ErrorInfo, true, 0));
+            }
+            else
+            {
+                SuccessInfo = "Sikeres ujjlenyomat egyeztetés, FpId=" + fpId + "!";
+                MessageChanged?.Invoke(this, new FPMessageChangedEventArgs(SuccessInfo, false, fpId));
+            }
+            return fpId;
         }
     }
     public class FPMessageChangedEventArgs : EventArgs
