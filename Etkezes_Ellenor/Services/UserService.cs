@@ -14,11 +14,13 @@ namespace Etkezes_Ellenor.Services
         private readonly EtkezesDBcontext _context;
         private readonly ILogger<UserService> _logger;
         private readonly IFPService _fpService;
-        public UserService(EtkezesDBcontext context, ILogger<UserService> logger, IFPService fpService)
+        private readonly ApiHelper _api;
+        public UserService(EtkezesDBcontext context, ILogger<UserService> logger, IFPService fpService, ApiHelper api)
         {
             _context = context;
             _logger = logger;
             _fpService = fpService;
+            _api = api;
         }
         public List<User> GetAllUsers()
         {
@@ -72,34 +74,46 @@ namespace Etkezes_Ellenor.Services
         {
             return _context.Users.Any(u => u.FpId == fId || u.FpId + 1000 == fId);
         }
-        public void UpdateUser(User user)
+        public async Task<bool> UpdateUser(User user)
         {
             try
             {
                 user.Updated = DateTime.Now;
                 _context.Users.Update(user);
-                _context.SaveChanges();
+                if (_context.SaveChanges() > 0)
+                {
+                    var resp = await _api.Put<User>($"/user/{user.Id}", user);
+                    return true;
+                }
+                else return false;
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error updating user");
+                return false;
             }
         }
-        public void DeleteUser(long id)
+        public async Task<bool> DeleteUser(long id)
         {
             try
             {
                 var user = GetUserById((int)id);
                 if (user != null)
                 {
-                    user.Updated = DateTime.Now;
                     _context.Users.Remove(user);
-                    _context.SaveChanges();
+                    if (_context.SaveChanges() > 0)
+                    {
+                        await _api.Delete($"/user/{user.Id}");
+                        return true;
+                    }
+                    else return false;
                 }
+                return true;
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error deleting user");
+                return false;
             }
         }
         public async Task<bool> UserLoading()

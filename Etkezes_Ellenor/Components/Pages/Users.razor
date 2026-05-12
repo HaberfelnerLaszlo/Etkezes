@@ -3,18 +3,24 @@
 @inject DataService dataService
 @inject ILogger<Users> logger
 @inject IToastService toastService
+@inject IDialogService dialogService
 @inject NavigationManager navigationManager
 @implements IDisposable
-@if(isUserLogin)
+<FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween">
+    <FluentButton Appearance="Appearance.Accent" OnClick="@(() => navigationManager.NavigateTo("/"))">Vissza a főoldalra</FluentButton>
+    <FluentSpacer />
+    <h3>Diákok karbantartása</h3>
+</FluentStack>
+<PageTitle>Diákok karbantartása</PageTitle>
+@if (isUserLogin)
 {
-<h3>Felhasználók</h3>
-<FluentDataGrid Items="@users">
+    <FluentDataGrid Items="@users">
     <PropertyColumn Property="u=>u.Name" Title="Név" />
     <PropertyColumn Property="u => u.Osztaly" Title="Osztály" />
     <PropertyColumn Property="u => u.Etkezik" Title="Étkezik?" />
     <PropertyColumn Property="u => u.FpId" Title="Id" />
-    <PropertyColumn Property="u => u.FingerPrint1" Title="1. Ujjlenyomat" />
-    <PropertyColumn Property="u => u.FingerPrint2" Title="2. Ujjlenyomat" />
+        <PropertyColumn Property="@((u) => String.IsNullOrWhiteSpace(u.FingerPrint1) ? "Nincs" : "Van")" Title="1. Ujj" />
+        <PropertyColumn Property="@((u) => String.IsNullOrWhiteSpace(u.FingerPrint2) ? "Nincs" : "Van")" Title="2. Ujj" />
     <PropertyColumn Property="u => u.Updated" Title="Frissítés" />
     <TemplateColumn Title="Műveletek">
         <FluentButton Appearance="Appearance.Accent" OnClick="@(() => EditUser(context))">Szerkesztés</FluentButton>
@@ -40,15 +46,48 @@ else
         isUserLogin = dataService.IsUserLogin();
         users = userService.GetAllUsers().AsQueryable();
     }
-    private void EditUser(User user)
+    private async Task EditUser(User user)
     {
-        toastService.ShowInfo($"Szerkesztés: {user.Name}");
-        // Implement edit functionality
+        DialogParameters parameters = new()
+        {
+            TitleTypo = Typography.H2,
+            Width = "500px",
+            Modal = true,
+            PreventScroll = true
+        };
+
+        IDialogReference dialog = await dialogService.ShowDialogAsync<UserDialog>(user, parameters);
+        DialogResult? result = await dialog.Result;
+        try
+        {
+            if (result is not null && result.Data is not null)
+            {
+                var req = await userService.UpdateUser((User)result.Data);
+                if (!req)
+                {
+                    toastService.ShowError("Nem sikerült a felhasználót elmenteni az adatbázisba!");
+                    return;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            toastService.ShowError(ex.Message);
+        }
     }
     private void DeleteUser(User user)
     {
-        toastService.ShowWarning($"Törlés: {user.Name}");
-        // Implement delete functionality
+        toastService.ClearAll();
+        toastService.ShowConfirmationToast(new ToastParameters<ConfirmationToastContent>()
+        {
+            Intent = ToastIntent.Success,
+            Title = "Biztos benne, hogy törölni szeretné a diákot?",
+            Timeout = 4000,
+            PrimaryAction = "Igen",
+            OnPrimaryAction = EventCallback.Factory.Create<ToastResult>(this, async () => { await userService.DeleteUser(user.Id); }),
+            SecondaryAction = "Mégse",
+            OnSecondaryAction = EventCallback.Factory.Create<ToastResult>(this, () => { return; }),
+        });
     }
     public void Dispose()
     {

@@ -1,10 +1,18 @@
 ﻿@page "/LoginUsers"
 @inject LoginUserService loginService
-
-<h3>LoginUsers</h3>
+@inject ILogger<LoginUsers> logger
+@inject IToastService toastService
+@inject NavigationManager navigationManager
+@inject IDialogService dialogService
+<FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween">
+    <FluentButton Appearance="Appearance.Accent" OnClick="@(() => navigationManager.NavigateTo("/"))">Vissza a főoldalra</FluentButton>
+    <FluentSpacer />
+    <h3>Felhasználók karbantartása</h3>
+</FluentStack>
+<PageTitle>Felhasználók karbantartása</PageTitle>
 @if(users.Count()== 0)
 {
-    <p>Nincs elmentett felhasználó.</p>
+    <p>@massage</p>
 }
 else
 {
@@ -20,7 +28,7 @@ else
         <PropertyColumn Property="u => u.Password.ToString()" Title="Jelszó_Hash" />*@
         <PropertyColumn Property="u => u.UpdatedAt.ToString()" Title="Utolsó frissítés" />
         <TemplateColumn Title="Műveletek">
-            <FluentButton Appearance="Appearance.Accent" OnClick="@(() => EditUser(context))">Szerkesztés</FluentButton>
+            <FluentButton Appearance="Appearance.Accent" OnClick="@(async () => await EditUser(context))">Szerkesztés</FluentButton>
             <FluentButton Appearance="Appearance.Accent" OnClick="@(() => DeleteUser(context))">Törlés</FluentButton>
             <FluentButton Appearance="Appearance.Accent" OnClick="@(() => Fingerprint(context))">Ujj</FluentButton>
         </TemplateColumn>
@@ -29,17 +37,57 @@ else
 
 @code {
     IQueryable<LoginUser> users = new List<LoginUser>().AsQueryable();
+    string massage = "Betöltés...";
     protected override async Task OnInitializedAsync()
     {
         users = loginService.GetAllUsers().AsQueryable();
+        if(users.Count() == 0)
+        {
+            massage = "Nincs elmentett felhasználó.";
+        }
     }
-    private void EditUser(LoginUser user)
+    private async Task EditUser(LoginUser user)
     {
-        // Implement edit functionality
+        DialogParameters parameters = new()
+        {
+            TitleTypo = Typography.H2,
+            Width = "500px",
+            Modal = true,
+            PreventScroll = true
+        };
+
+        IDialogReference dialog = await dialogService.ShowDialogAsync<LoginUserDialog>(user, parameters);
+        DialogResult? result = await dialog.Result;
+        try
+        {
+            if (result is not null && result.Data is not null)
+            {
+                var req = await loginService.UpdateUser((LoginUser)result.Data);
+                if (!req)
+                {
+                    toastService.ShowError("Nem sikerült a felhasználót elmenteni az adatbázisba!");
+                    return;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            toastService.ShowError(ex.Message);
+        }
     }
     private void DeleteUser(LoginUser user)
     {
-        // Implement delete functionality
+        toastService.ClearAll();
+        toastService.ShowConfirmationToast(new ToastParameters<ConfirmationToastContent>()
+        {
+            Intent = ToastIntent.Success,
+            Title = "Biztos benne, hogy törölni szeretné a felhasználót?",
+            Timeout = 4000,
+            PrimaryAction = "Igen",
+            OnPrimaryAction = EventCallback.Factory.Create<ToastResult>(this, async () => { await loginService.DeleteUser(user.Id); }),
+            SecondaryAction = "Mégse",
+            OnSecondaryAction = EventCallback.Factory.Create<ToastResult>(this, () => { return; }),
+        });
     }
     private void Fingerprint(LoginUser user)
     {

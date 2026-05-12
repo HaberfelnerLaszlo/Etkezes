@@ -6,13 +6,14 @@ using Etkezes_Models.ViewModels;
 using FingerPrintService;
 
 using Microsoft.EntityFrameworkCore;
+using Microsoft.FluentUI.AspNetCore.Components;
 
 using System.Security.Cryptography;
 
 
 namespace Etkezes_Ellenor.Services
 {
-    public class LoginUserService(EtkezesDBcontext context, IFPService fPService)
+    public class LoginUserService(EtkezesDBcontext context, IFPService fPService, ApiHelper api)
     {
         private readonly EtkezesDBcontext _context = context;
         //private readonly IFPService _fPService = fPService;
@@ -56,6 +57,47 @@ namespace Etkezes_Ellenor.Services
                 return false;
             }
         }
+        public async Task<bool> UpdateUser(LoginUser updatedUser)
+        {
+            try
+            {
+                _context.LoginUsers.Update(updatedUser);
+                if(await _context.SaveChangesAsync() > 0) return true;
+                var result = await api.Put($"/loginuser/{updatedUser.Id}", updatedUser);
+                return false;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error updating user: {ex.Message}");
+                //OnMessage?.Invoke(this, new OnMessageEventArgs($"Error updating user: {ex.Message}", 105));
+                return false;
+            }
+        }
+        public async Task<bool> DeleteUser(Guid userId)
+        {
+            try
+            {
+                var user = GetUserById(userId);
+                if (user != null)
+                {
+                    _context.LoginUsers.Remove(user);   
+                    await api.Delete($"/loginuser/{userId}");
+                }
+                else
+                {
+                    return true;
+                }
+                if (await _context.SaveChangesAsync() > 0) return true;
+                return false;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error deleting user: {ex.Message}");
+                //OnMessage?.Invoke(this, new OnMessageEventArgs($"Error deleting user: {ex.Message}", 104));
+                return false;
+            }
+        }
+
         public bool ValidateUser(string name, string password)
         {
             var user = GetUserByUserName(name);

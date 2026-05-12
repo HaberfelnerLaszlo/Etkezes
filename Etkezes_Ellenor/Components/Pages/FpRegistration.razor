@@ -136,7 +136,7 @@ else
             message = "Kérem érintse meg az ujjlenyomat olvasót!";
         }
     }
-    private void SaveUser()
+    private async Task SaveUser()
     {
         if(string.IsNullOrWhiteSpace(newUser.FingerPrint1))
         {
@@ -144,19 +144,19 @@ else
             return;
         }
         newUser.Updated=DateTime.Now;
-        userService.UpdateUser(newUser);
+        await userService.UpdateUser(newUser);
         toastService.ShowSuccess("Felhasználó sikeresen frissítve!");
-        Task.Delay(2000).ContinueWith(_ => navigationManager.NavigateTo("/"));
+        await Task.Delay(2000);
     }
-    private void HandleValidSubmit(EditContext args)
+    private async Task HandleValidSubmit(EditContext args)
     {
         var user = args.Model as User;
         if (user != null)
         {
             user.Updated = DateTime.Now;
-            userService.UpdateUser(user);
+            await userService.UpdateUser(user);
             toastService.ShowSuccess("Felhasználó sikeresen frissítve!");
-            Task.Delay(2000).ContinueWith(_ => navigationManager.NavigateTo("/"));
+            await Task.Delay(2000).ContinueWith(_ => navigationManager.NavigateTo("/"));
         }
     }
     
