@@ -154,9 +154,9 @@
         if (e.IsError)
         {
             // Handle error messages
-            if (e.Code == -17) // Assuming 100 is the code for fingerprint device connection error
+            if (e.Code == -17) // Nincs egyezés az adatbázisban. Assuming 100 is the code for fingerprint device connection error
             {
-                if (!await ClickedMatching())
+                if (!await ClickedMatching())//Ha nincs egyezés, akkor felajánlja a regisztrációt 
                 {
                     toastService.ShowCommunicationToast(new ToastParameters<CommunicationToastContent>()
                         {

@@ -361,3 +361,5 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+Etkezes_Ellenor/etkezes_local.db-wal
+Etkezes_Ellenor/etkezes_local.db-shm
