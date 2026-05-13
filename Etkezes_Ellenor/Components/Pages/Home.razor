@@ -43,8 +43,10 @@
         }
     </FluentHeader>
     <FluentBodyContent Style="height: auto;">
-        <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" HorizontalGap="15">
-            <FluentStack Orientation="Orientation.Vertical" VerticalAlignment="VerticalAlignment.Center" VerticalGap="10" Width="600px" HorizontalAlignment="HorizontalAlignment.Center" Style="height:600px">
+        <FluentStack Orientation="Orientation.Horizontal"
+         HorizontalAlignment="HorizontalAlignment.SpaceBetween" HorizontalGap="15"Style="height:650px">
+            <FluentStack Orientation="Orientation.Vertical" VerticalAlignment="VerticalAlignment.Center" VerticalGap="10" Width="500px" 
+            HorizontalAlignment="HorizontalAlignment.Center" >
                 <img src="@adatok[0].Image" alt="Enabled" style="width: 500px; height: 500px;" />
                 <FluentLabel Typo="Typography.H5">@adatok[0].Name</FluentLabel>
             </FluentStack>
@@ -57,7 +59,10 @@
                     <img src="@adatok[2].Image" alt="Enabled" style="width: 150px; height: 150px;" />
                     <FluentLabel Typo="Typography.H6">@adatok[2].Name</FluentLabel>
                 </FluentCard>
-
+             <FluentCard MinimalStyle="true" Height="200px" Width="200px">
+                    <img src="@adatok[3].Image" alt="Enabled" style="width: 150px; height: 150px;" />
+                    <FluentLabel Typo="Typography.H6">@adatok[3].Name</FluentLabel>
+                </FluentCard>
             </FluentStack>
             @if(String.IsNullOrWhiteSpace(identifiedUser?.UserName) == false)
             {
@@ -84,7 +89,7 @@
         </FluentGrid>
     </FluentBodyContent>
     <FluentFooter>
-        2026.05.12 19:42
+        2026.05.13 10:42
         <FluentSpacer/>
         <p>@message</p>
         <FluentSpacer/>

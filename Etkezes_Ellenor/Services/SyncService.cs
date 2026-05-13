@@ -35,18 +35,22 @@ namespace Etkezes_Ellenor.Services
             if (await dbContext.LoginUsers.AnyAsync())
             {
                 loginUserSyncDateUp = await dbContext.LoginUsers.MaxAsync(sd => sd.UpdatedAt);
+                Console.WriteLine($"Last LoginUser update date: {loginUserSyncDateUp:O}");
             }
             if(await dbContext.Users.AnyAsync())
             {
                 lastUserSyncDateUp = await dbContext.Users.MaxAsync(sd => sd.Updated);
+                Console.WriteLine($"Last User update date: {lastUserSyncDateUp:O}");
             }
             if(await dbContext.SyncDatas.AnyAsync(sd => sd.Type == SyncType.Down && sd.Table == "LoginUser"))
             {
                 lastLoginUserSyncDateDown = await dbContext.SyncDatas.Where(sd => sd.Type == SyncType.Down && sd.Table == "LoginUser").MaxAsync(sd => sd.SyncDate);
+                Console.WriteLine($"Last LoginUser sync date (down): {lastLoginUserSyncDateDown:O}");
             }
             if(await dbContext.SyncDatas.AnyAsync(sd => sd.Type == SyncType.Down && sd.Table == "User"))
             {
                 lastUserSyncDateDown = await dbContext.SyncDatas.Where(sd => sd.Type == SyncType.Down && sd.Table == "User").MaxAsync(sd => sd.SyncDate);
+                Console.WriteLine($"Last User sync date (down): {lastUserSyncDateDown:O}");
             }
             bool IsSyncSuccessful = false;
             #region down
@@ -71,6 +75,7 @@ namespace Etkezes_Ellenor.Services
                     else
                     {
                         ErrorMessage = "Nem jött a login user adat a szerverről.";
+                        Console.WriteLine(ErrorMessage);
                         dbContext.SyncDatas.Add(new SyncData
                         {
                             Table = "LoginUser",
