@@ -35,6 +35,7 @@ namespace FingerPrintService
         int cbCapTmp = 2048;
         int cbRegTmp = 0;
         int iFid = 1;
+        Dictionary<int, string> RegisteredFingerprints = new Dictionary<int, string>();
         Thread? captureThread = null;
         /// <summary>
         /// 0: Regisztrációs mód,
@@ -266,6 +267,7 @@ namespace FingerPrintService
                     {
                         ErrorInfo = "Sikertelen azonosítás, hibakód= " + ret;
                         MessageChanged?.Invoke(this, new FPMessageChangedEventArgs(ErrorInfo, true, ret));
+                        Console.WriteLine("Identification failed, switching to matching mode for next attempt...");
                         ProcessId = 2; // Switch to matching mode for the next attempt
                         return;
                     }
@@ -275,17 +277,35 @@ namespace FingerPrintService
                     // Matching mode processing
                     Console.WriteLine("Processing in matching mode...");
                     int fid = 0;
-                    int ret = ZkfpLinux.ZKFPM_DBMatch(mDBHandle, CapTmp, CapTmp.Length, RegTmp, RegTmp.Length, ref fid);
+                    int ret = 0;
+                    int fpId = 0;
+                        foreach (var fp in RegisteredFingerprints)
+                    {
+                        RegTmp = Base64Converter.ToBytes(fp.Value).Bytes;
+                        cbRegTmp = RegTmp.Length;
+                        int aktRet = 0;
+                        ret = ZkfpLinux.ZKFPM_DBMatch(mDBHandle, CapTmp, cbCapTmp, RegTmp, cbRegTmp, ref fid);
+                        if (aktRet < ret)
+                        {
+                            SuccessInfo = "Sikeres ujjlenyomat egyeztetés, score=" + ret + "!";
+                            //MessageChanged?.Invoke(this, new FPMessageChangedEventArgs(SuccessInfo, false, fid));
+                            fpId = fp.Key;
+                            //return fp.FpId;
+                        }
+                    }
                     if (0 < ret)
                     {
                         SuccessInfo = "Sikeres ujjlenyomat egyeztetés, score=" + ret + "!";
-                        MessageChanged?.Invoke(this, new FPMessageChangedEventArgs(SuccessInfo, false,fid));
+                        MessageChanged?.Invoke(this, new FPMessageChangedEventArgs(SuccessInfo, false,fpId));
+                        Console.WriteLine("Matching successful, switching back to identification mode for next attempt...");
+                        ProcessId = 1;
                         return;
                     }
                     else
                     {
                         ErrorInfo = "Sikertelen ujjlenyomat egyeztetés, hibakód= " + ret;
                         MessageChanged?.Invoke(this, new FPMessageChangedEventArgs(ErrorInfo, true, ret));
+                        _logger.LogError(ErrorInfo, ret);
                         return;
                     }
                 }
@@ -440,13 +460,16 @@ namespace FingerPrintService
                     mDBHandle = IntPtr.Zero;
                 }
                 mDBHandle = ZkfpLinux.ZKFPM_DBInit();
+                RegisteredFingerprints.Clear();
                 SuccessInfo = "Sikeres adatbázis törlés";
+                _logger.LogInformation(SuccessInfo);
                 MessageChanged?.Invoke(this, new FPMessageChangedEventArgs(SuccessInfo, false));
                 return true;
             }
             catch (Exception ex)
             {
                 ErrorInfo = $"Hiba történt az adatbázis törlése során: {ex.Message}";
+                _logger.LogError(ErrorInfo, ex);
                 MessageChanged?.Invoke(this, new FPMessageChangedEventArgs(ErrorInfo, true));
                 return false;
             }
@@ -470,6 +493,7 @@ namespace FingerPrintService
                 {
                     await Open();
                 }
+                RegisteredFingerprints.Add(fId, fingerPrintBase64);
                 byte[] blob = Base64Converter.ToBytes(fingerPrintBase64).Bytes;
                 int fid = 0, score = 0;
                 int ret = ZkfpLinux.ZKFPM_DBIdentify(mDBHandle, blob, (uint)blob.Length, out uint fidUint, out uint scoreUint);
@@ -498,6 +522,7 @@ namespace FingerPrintService
                 else
                 {
                     ErrorInfo = "Sikertelen adatbázis regisztráció, hibakód=" + ret;
+                    _logger.LogError(ErrorInfo, fId, ret);
                     MessageChanged?.Invoke(this, new FPMessageChangedEventArgs(ErrorInfo, true, ret));
                     return false;
                 }
@@ -505,6 +530,7 @@ namespace FingerPrintService
             catch (Exception ex)
             {
                 ErrorInfo = $"Hiba történt az adatbázis regisztráció során: {ex.Message}";
+                _logger.LogError(ErrorInfo, ex);
                 MessageChanged?.Invoke(this, new FPMessageChangedEventArgs(ErrorInfo, true));
                 return false;
             }
@@ -520,10 +546,12 @@ namespace FingerPrintService
             if (identify)
             {
                 ProcessId = 1;
+                _logger.LogInformation("Switched to identification mode.");
             }
             else
             {
                 ProcessId = 2;
+                _logger.LogInformation("Switched to matching mode.");
             }
             bIdentify = identify;
         }
@@ -581,6 +609,7 @@ namespace FingerPrintService
             if (fpId == 0)
             {
                 ErrorInfo = "Sikertelen ujjlenyomat egyeztetés, nincs egyezés az adatbázisban!";
+                _logger.LogWarning(ErrorInfo);
                 MessageChanged?.Invoke(this, new FPMessageChangedEventArgs(ErrorInfo, true, 0));
             }
             else
