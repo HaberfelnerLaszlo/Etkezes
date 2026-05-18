@@ -1,33 +1,40 @@
 ﻿@page "/LoginUsers"
 @inject LoginUserService loginService
+@inject DataService dataService
 @inject IToastService toastService
 @inject IDialogService dialogService
 <PageTitle>Felhasználók</PageTitle>
 
 <h3>Felhasználók</h3>
-<FluentButton Appearance="Appearance.Accent" OnClick="@(() => NewUser())">Új felhasználó</FluentButton>
-@if (users.Count() == 0)
+@if (dataService.actualUser != null)
 {
-    <p>Nincs elmentett felhasználó.</p>
+    <FluentButton Appearance="Appearance.Accent" OnClick="@(() => NewUser())">Új felhasználó</FluentButton>
+    @if (users.Count() == 0)
+    {
+        <p>Nincs elmentett felhasználó.</p>
+    }
+    else
+    {
+        <FluentDataGrid Items="@users" AutoFit="true">
+            <PropertyColumn Property="u => u.Name" Title="Név" />
+            <PropertyColumn Property="u => u.UserName" Title="Felhasználónév" />
+            <PropertyColumn Property="u => u.Role" Title="Szerepkör" />
+            <PropertyColumn Property="u => u.FpId" Title="FP Id" />
+            <PropertyColumn Property="@((u) => String.IsNullOrWhiteSpace(u.FingerPrint1)?"Nincs":"Van")" Title="1. Ujj" />
+            <PropertyColumn Property="@((u) => String.IsNullOrWhiteSpace(u.FingerPrint2)?"Nincs":"Van")" Title="2. Ujj" />
+            <PropertyColumn Property="u => u.UpdatedAt.ToString()" Title="Utolsó frissítés" />
+            <TemplateColumn Title="Műveletek">
+                <FluentButton Appearance="Appearance.Accent" OnClick="@(() => EditUser(context))">Szerkesztés</FluentButton>
+                <FluentButton Appearance="Appearance.Accent" OnClick="@(() => DeleteUser(context))">Törlés</FluentButton>
+                <FluentButton Appearance="Appearance.Accent" OnClick="@(() => NewPass(context))">Új jelszó</FluentButton>
+            </TemplateColumn>
+        </FluentDataGrid>
+    }
 }
 else
 {
-    <FluentDataGrid Items="@users" AutoFit="true">
-        <PropertyColumn Property="u => u.Name" Title="Név" />
-        <PropertyColumn Property="u => u.UserName" Title="Felhasználónév" />
-        <PropertyColumn Property="u => u.Role" Title="Szerepkör" />
-        <PropertyColumn Property="u => u.FpId" Title="FP Id" />
-        <PropertyColumn Property="@((u) => String.IsNullOrWhiteSpace(u.FingerPrint1)?"Nincs":"Van")" Title="1. Ujj" />
-        <PropertyColumn Property="@((u) => String.IsNullOrWhiteSpace(u.FingerPrint2)?"Nincs":"Van")" Title="2. Ujj" />
-        <PropertyColumn Property="u => u.UpdatedAt.ToString()" Title="Utolsó frissítés" />
-        <TemplateColumn Title="Műveletek">
-            <FluentButton Appearance="Appearance.Accent" OnClick="@(() => EditUser(context))">Szerkesztés</FluentButton>
-            <FluentButton Appearance="Appearance.Accent" OnClick="@(() => DeleteUser(context))">Törlés</FluentButton>
-            <FluentButton Appearance="Appearance.Accent" OnClick="@(() => NewPass(context))">Új jelszó</FluentButton>
-        </TemplateColumn>
-    </FluentDataGrid>
+    <FluentLabel>Jelentkezz be a folytatáshoz!</FluentLabel>
 }
-
 @code {
     IQueryable<LoginUser> users = new List<LoginUser>().AsQueryable();
     protected override async Task OnInitializedAsync()

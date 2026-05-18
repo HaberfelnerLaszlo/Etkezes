@@ -52,9 +52,8 @@ namespace Etkezes_Ellenor.Services
                     _userService.UserLoading().Wait(cancellationToken);
                     _fpService.SwitchIdentifyMode(true);
                     _logger.LogInformation("Azonosítás bekapcsolva.");
-                    // _toastService.ShowSuccess("Azonosítás bekapcsolva.");
                 }
-                //else _toastService.ShowError("Nem sikerült törölni az adatbázist, az azonosítás nem kapcsolható be!");
+                _logger.LogError("Nem sikerült törölni az adatbázist, az azonosítás nem kapcsolható be!");
                 return Task.CompletedTask;
             }
             catch (Exception e)

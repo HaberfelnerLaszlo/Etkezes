@@ -18,11 +18,11 @@ builder.Services.AddSingleton<UserService>();
 builder.Services.AddSingleton<LoginUserService>();
 builder.Services.AddSingleton<EtkezesService>();
 builder.Services.AddSingleton<ExcelService>();
-//builder.WebHost.ConfigureKestrel(options =>
-//{
-//    options.ListenAnyIP(5001);
-//    options.ListenLocalhost(5000);
-//});
+builder.WebHost.ConfigureKestrel(options =>
+{
+    options.ListenAnyIP(5001);
+    options.ListenLocalhost(5000);
+});
 var app = builder.Build();
 
 app.MapDefaultEndpoints();

@@ -58,6 +58,7 @@ namespace Etkezes_Ellenor.Services
             {
                 if (syncDates.LoginUserSyncDateDown)
                 {
+                    logger.LogInformation("Syncing login users from server...");
                     var loginUsersToUpdate = await apiHelper.Get<List<LoginUser>>($"/sync/loginusers/{lastLoginUserSyncDateDown:O}");
                     if (loginUsersToUpdate != null)
                     {
@@ -70,12 +71,13 @@ namespace Etkezes_Ellenor.Services
                             SyncDate = DateTime.UtcNow
                         });
                         await dbContext.SaveChangesAsync();
+                        logger.LogInformation($"{loginUsersToUpdate.Count} login users synced successfully from server.");
                         IsSyncSuccessful = true;
                     }
                     else
                     {
                         ErrorMessage = "Nem jött a login user adat a szerverről.";
-                        Console.WriteLine(ErrorMessage);
+                        logger.LogInformation(ErrorMessage);
                         dbContext.SyncDatas.Add(new SyncData
                         {
                             Table = "LoginUser",
@@ -90,6 +92,7 @@ namespace Etkezes_Ellenor.Services
                 }
                 if (syncDates.UserSyncDateDown)
                 {
+                    logger.LogInformation("Syncing users from server...");
                     var usersToUpdate = await apiHelper.Get<List<User>>($"/sync/users/{lastUserSyncDateDown:O}");
                     if (usersToUpdate != null)
                     {
@@ -102,11 +105,13 @@ namespace Etkezes_Ellenor.Services
                             SyncDate = DateTime.UtcNow
                         });
                         await dbContext.SaveChangesAsync();
+                        logger.LogInformation($"{usersToUpdate.Count} users synced successfully from server.");
                         IsSyncSuccessful = true;
                     }
                     else
                     {
                         ErrorMessage = "Nem jött a user adat a szerverről.";
+                        logger.LogError(ErrorMessage);
                         dbContext.SyncDatas.Add(new SyncData
                         {
                             Table = "User",
@@ -249,6 +254,7 @@ namespace Etkezes_Ellenor.Services
                     return true;
                 }
                 ErrorMessage = "Nem jött az etkezesek adat a szerverről.";
+                logger.LogInformation(ErrorMessage);
                 return false;
             }
             catch (Exception ex)
