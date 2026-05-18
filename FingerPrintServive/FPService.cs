@@ -307,7 +307,6 @@ namespace FingerPrintService
                         ProcessId = 1;
                         return;
                 }
-
                 default:
                     break;
             }
