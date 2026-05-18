@@ -10,13 +10,15 @@
     </TemplateColumn>
 </FluentDataGrid>
 <FluentPaginator State="@pagination" />
-<FluentButton OnClick="@(async ()=>await Save.InvokeAsync(Users))" Disabled="!IsEdited">Mentés</FluentButton>
+@* <FluentButton OnClick="@(async ()=>await Save.InvokeAsync(Users))" Disabled="!IsEdited">Mentés</FluentButton> *@
 
 @code{
     [Parameter]
     public List<User> Users { get; set; } = new();
+    // [Parameter]
+    // public EventCallback<List<User>> Save { get; set; }
     [Parameter]
-    public EventCallback<List<User>> Save { get; set; }
+    public EventCallback<User> Save { get; set; }
     [Parameter]
     public EventCallback<User> Delete { get; set; }
     PaginationState pagination = new PaginationState { ItemsPerPage = 8 };
@@ -28,9 +30,6 @@
         {
             Title = $"{user.Name} adatai",
             TitleTypo = Typography.H4,
-            // PrimaryAction = "Yes",
-            // PrimaryActionEnabled = true,
-            // SecondaryAction = "No",
             Width = "500px",
             Modal = true,
             PreventScroll = true
@@ -45,7 +44,8 @@
             var updatingUser = Users.Find(u =>u.Id== user.Id);
             updatingUser = user;
         }
-        //await Edit.InvokeAsync(user); 
+        StateHasChanged();
+        await Save.InvokeAsync(user); 
     }
     private async void DeleteUser(User user) => await Delete.InvokeAsync(user);
 }

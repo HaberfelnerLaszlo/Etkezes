@@ -288,26 +288,24 @@ namespace FingerPrintService
                         if (aktRet < ret)
                         {
                             SuccessInfo = "Sikeres ujjlenyomat egyeztetés, score=" + ret + "!";
-                            //MessageChanged?.Invoke(this, new FPMessageChangedEventArgs(SuccessInfo, false, fid));
                             fpId = fp.Key;
-                            //return fp.FpId;
                         }
                     }
                     if (0 < ret)
                     {
                         SuccessInfo = "Sikeres ujjlenyomat egyeztetés, score=" + ret + "!";
                         MessageChanged?.Invoke(this, new FPMessageChangedEventArgs(SuccessInfo, false,fpId));
-                        Console.WriteLine("Matching successful, switching back to identification mode for next attempt...");
-                        ProcessId = 1;
-                        return;
                     }
                     else
                     {
                         ErrorInfo = "Sikertelen ujjlenyomat egyeztetés, hibakód= " + ret;
                         MessageChanged?.Invoke(this, new FPMessageChangedEventArgs(ErrorInfo, true, ret));
                         _logger.LogError(ErrorInfo, ret);
-                        return;
+                        //return;
                     }
+                        Console.WriteLine("Matching successful, switching back to identification mode for next attempt...");
+                        ProcessId = 1;
+                        return;
                 }
 
                 default:

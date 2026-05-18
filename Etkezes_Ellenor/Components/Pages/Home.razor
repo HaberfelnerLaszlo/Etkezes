@@ -42,15 +42,15 @@
             <FluentIcon Value="@(new Icons.Regular.Size20.DeviceMeetingRoomRemote())" Color="Color.Disabled" />
         }
     </FluentHeader>
-    <FluentBodyContent Style="height: auto;">
+    <FluentBodyContent Style="height: auto;margin:0px 20px">
         <FluentStack Orientation="Orientation.Horizontal"
-         HorizontalAlignment="HorizontalAlignment.SpaceBetween" HorizontalGap="15"Style="height:650px">
+         HorizontalAlignment="HorizontalAlignment.SpaceBetween" HorizontalGap="30"Style="height:650px">
             <FluentStack Orientation="Orientation.Vertical" VerticalAlignment="VerticalAlignment.Center" VerticalGap="10" Width="500px" 
-            HorizontalAlignment="HorizontalAlignment.Center" >
+            HorizontalAlignment="HorizontalAlignment.Center" Style="height:100%">
                 <img src="@adatok[0].Image" alt="Enabled" style="width: 500px; height: 500px;" />
-                <FluentLabel Typo="Typography.H5">@adatok[0].Name</FluentLabel>
+                <FluentLabel Typo="Typography.H4">@adatok[0].Name</FluentLabel>
             </FluentStack>
-            <FluentStack Orientation="Orientation.Vertical" VerticalAlignment="VerticalAlignment.Center" VerticalGap="10">
+            <FluentStack Orientation="Orientation.Horizontal" VerticalAlignment="VerticalAlignment.Center" VerticalGap="10" HorizontalAlignment="HorizontalAlignment.Stretch" HorizontalGap="10" Wrap="true" Style="height:100%">
                 <FluentCard MinimalStyle="true" Height="200px" Width="200px">
                     <img src="@adatok[1].Image" alt="Enabled" style="width: 150px; height: 150px;" />
                     <FluentLabel Typo="Typography.H6">@adatok[1].Name</FluentLabel>
@@ -66,7 +66,7 @@
             </FluentStack>
             @if(String.IsNullOrWhiteSpace(identifiedUser?.UserName) == false)
             {
-                <FluentStack Orientation="Orientation.Vertical" VerticalAlignment="VerticalAlignment.Center" VerticalGap="10" Width="150px">
+                <FluentStack Orientation="Orientation.Vertical" VerticalAlignment="VerticalAlignment.Center" VerticalGap="10" Width="150px" Style="margin: 0px 20px">
                     <FluentButton Appearance="Appearance.Neutral" OnClick="() => { errorMessage = string.Empty; fpService.Open(); }">Indítás</FluentButton>
                     <FluentButton Appearance="Appearance.Neutral" OnClick="async () => { errorMessage = string.Empty; await syncService.GetSyncDates(); }">Szinkronizáció</FluentButton>
                     <FluentButton Appearance="Appearance.Neutral" OnClick="@(() => navigationManager.NavigateTo("/reg"))">Regisztráció</FluentButton>

@@ -3,7 +3,8 @@
 @inject IToastService toastService
 @inject EtkezesService etkezesService
 @implements IDisposable
-<h3>EtkezoPage</h3>
+<PageTitle>Napi Étkezők</PageTitle>
+<h3>Napi étkezők</h3>
 <SelectOsztaly OnSelectOsztaly="SelectOsztaly"/>
 <FluentDatePicker Value="date" ValueChanged="OnDateChanged" />
 @if (IsselectedOsztaly)
@@ -21,7 +22,6 @@
     }
     private async Task SelectOsztaly(string osztaly)
     {
-        // Handle the selected class here
         etkezesek = await etkezesService.GetEtkezesekByDateByOsztaly(date, osztaly);
         if (etkezesek.Count == 0)
         {
@@ -35,8 +35,7 @@
     }
     private void OnMessageChange(object sender, OnMessageEventArgs e)
     {
-        // Handle the message change event here
-        toastService.ShowError(e.Message);
+        if(e.Code!=104) toastService.ShowError(e.Message);
     }
     private async Task DeleteEtkezes(int id)
     {

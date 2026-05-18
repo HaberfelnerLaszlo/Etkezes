@@ -1,35 +1,43 @@
 ﻿@page "/userstoetkezo"
 @inject UserService userService
 @inject EtkezesService etkezesService
+@inject DataService dataService
 @inject IDialogService dialogService
 @inject IToastService toastService
 @implements IDisposable
 
-<PageTitle>Diákok</PageTitle>
-<h3>UserPage</h3>
- <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="20">
-    <SelectOsztaly OnSelectOsztaly="SelectOsztaly"></SelectOsztaly>
-    <FluentDatePicker @bind-Value="@datum" @bind-Value:after="OnDateChanged" Label="Dátum" DisabledDateFunc="@(date => date < DateTime.Today)"></FluentDatePicker>
-    <FluentSwitch @bind-Value="onlyEtkezok" Label="Csak étkezők?" @bind-Value:after="@(()=>LoadUsers())"></FluentSwitch>
-    <FluentCounterBadge Count="editedEtkezok.Count" BackgroundColor="@Color.Info" Color="Color.Fill" >
-    <FluentButton OnClick="@(async () => {await usersEtkezes!.Changing(); await SaveToEtkezes(editedEtkezok);})">Mentés</FluentButton>
-    </FluentCounterBadge>
-    @*<FluentButton OnClick="AddUsers">Diákok feltöltése</FluentButton>*@
-</FluentStack> 
-@if (userEtkezok.Count == 0)
+<PageTitle>Étkezések</PageTitle>
+<h4>Étkezések karbantartása</h4>
+@if (dataService.actualUser != null)
 {
-    if(IsselectedOsztaly)
+    <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="20">
+        <SelectOsztaly OnSelectOsztaly="SelectOsztaly"></SelectOsztaly>
+        <FluentDatePicker @bind-Value="@datum" @bind-Value:after="OnDateChanged" Label="Dátum" DisabledDateFunc="@(date => date < DateTime.Today)"></FluentDatePicker>
+        <FluentSwitch @bind-Value="onlyEtkezok" Label="Csak étkezők?" @bind-Value:after="@(()=>LoadUsers())"></FluentSwitch>
+        <FluentCounterBadge Count="editedEtkezok.Count" BackgroundColor="@Color.Info" Color="Color.Fill" >
+            <FluentButton OnClick="@(async () => {await usersEtkezes!.Changing(); await SaveToEtkezes(editedEtkezok);})">Mentés</FluentButton>
+        </FluentCounterBadge>
+        @*<FluentButton OnClick="AddUsers">Diákok feltöltése</FluentButton>*@
+    </FluentStack> 
+    @if (userEtkezok.Count == 0)
     {
-        <p>Betöltés...</p>
+        if (IsselectedOsztaly)
+        {
+            <p>Betöltés...</p>
+        }
+        else
+        {
+            <p>Válasz osztályt!</p>
+        }
     }
     else
     {
-        <p>Válasz osztályt!</p>
+        <UsersEtkezes @ref="usersEtkezes" Users="userEtkezok" Save="SaveToEtkezes" Delete="DeleteEtkezes" Changed="ChangedEtkezes" />
     }
 }
 else
 {
-    <UsersEtkezes @ref="usersEtkezes" Users="userEtkezok" Save="SaveToEtkezes" Delete="DeleteEtkezes" Changed="ChangedEtkezes" />
+    <FluentLabel>Jelentkezz be a folytatáshoz!</FluentLabel>
 }
 @code {
     bool IsselectedOsztaly = false, onlyEtkezok =true;

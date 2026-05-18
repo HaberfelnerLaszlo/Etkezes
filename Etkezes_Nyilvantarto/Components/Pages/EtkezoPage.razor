@@ -3,8 +3,12 @@
 @inject IToastService toastService
 @inject EtkezesService etkezesService
 @inject ExcelService excelService
+@inject DataService dataService
 @implements IDisposable
-<h3>EtkezoPage</h3>
+<h3>Étkezők</h3>
+@if (dataService.actualUser != null)
+{
+
 <SelectOsztaly OnSelectOsztaly="SelectOsztaly"/>
 <FluentButton Appearance="Appearance.Accent" OnClick="@(() => AddEtkezok(1))">Mai étkezők feltöltése</FluentButton>
 <FluentButton Appearance="Appearance.Accent" OnClick="@(() => AddEtkezok(2))"> Étkezők feltöltése adott hónapra</FluentButton>
@@ -13,6 +17,11 @@
 @if (IsselectedOsztaly)
 {
     <EtkezesekTable Etkezesek="etkezesekView" Delete="DeleteEtkezes" Update="UpdateEtkezes" />
+}
+}
+else
+{
+    <FluentLabel>Jelentkezz be a folytatáshoz!</FluentLabel>
 }
 @code {
     List<EtkezesView> etkezesekView = new List<EtkezesView>();
@@ -25,7 +34,6 @@
     }
     private async Task SelectOsztaly(string osztaly)
     {
-        // Handle the selected class here
         etkezesekView = await etkezesService.GetEtkezesekByOsztaly(osztaly);
         if (etkezesekView.Count == 0)
         {
@@ -194,7 +202,6 @@
         {
             var etkezesek = await etkezesService.GetEtkezesekByDate(DateTime.Today); 
             string filePath = excelService.CreateEtkezokExcel(etkezesek);
-            
             //using (File.Open(filePath, FileMode.Open)) 
         StateHasChanged();
         }
@@ -205,8 +212,7 @@
     }
     private void OnMessageChange(object sender, OnMessageEventArgs e)
     {
-        // Handle the message change event here
-        toastService.ShowError(e.Message);
+        if(e.Code!=104) toastService.ShowError(e.Message);
     }
     private async Task DeleteEtkezes(int id)
     {

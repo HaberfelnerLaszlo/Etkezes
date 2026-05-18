@@ -2,33 +2,43 @@
 @using Newtonsoft.Json
 @inject UserService userService
 @inject ExcelService excelService
+@inject DataService dataService
 @inject IDialogService dialogService
 @inject IToastService toastService
 @implements IDisposable
 
 <PageTitle>Diákok</PageTitle>
-<h3>UserPage</h3>
-<SelectOsztaly OnSelectOsztaly="SelectOsztaly"></SelectOsztaly>
-<FluentStack Orientation="Orientation.Horizontal" HorizontalGap="20">
-    <FluentButton OnClick="AddUser">Új diák</FluentButton>
-    <FluentButton OnClick="AddUsers">Diákok feltöltése</FluentButton>
-</FluentStack>
-@if (users.Count == 0)
+<h3>Diákok karbantartása</h3>
+@* @if (dataService.actualUser != null)
 {
-    if(IsselectedOsztaly)
+ *@
+ <SelectOsztaly OnSelectOsztaly="SelectOsztaly"></SelectOsztaly>
+    <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="20">
+        <FluentButton OnClick="AddUser">Új diák</FluentButton>
+        <FluentButton OnClick="AddUsers">Diákok feltöltése</FluentButton>
+    </FluentStack>
+    @if (users.Count == 0)
     {
-        <p>Nincs az osztálynak tanulója!</p>
+        if (IsselectedOsztaly)
+        {
+            <p>Nincs az osztálynak tanulója!</p>
+        }
+        else
+        {
+            <p>Válasz osztályt!</p>
+        }
     }
     else
     {
-        <p>Válasz osztályt!</p>
+        <UsersTable Users="users" Save="SaveUser" Delete="DeleteUser"/>
     }
-}
+@* }
 else
 {
-    <UsersTable Users="users"/>
+    <FluentLabel>Jelentkezz be a folytatáshoz!</FluentLabel>
 }
-@code {
+ *@
+ @code {
     bool IsselectedOsztaly = false;
     List<User> users = new List<User>();
     protected override void OnInitialized()
@@ -49,9 +59,6 @@ else
         {
             Title = "Új diák felvétele",
             TitleTypo = Typography.H2,
-            // PrimaryAction = "Yes",
-            // PrimaryActionEnabled = true,
-            // SecondaryAction = "No",
             Width = "500px",
             Modal = true,
             PreventScroll = true
@@ -120,6 +127,33 @@ else
         {
             toastService.ShowError(ex.Message);
         }
+    }
+    private async Task SaveUser(User user)
+    {
+        try
+        {
+            var updatedUser = await userService.Update(user);
+            if (updatedUser is null)
+            {
+                toastService.ShowError("Nem sikerült a diákot elmenteni az adatbázisba!");
+                return;
+            }
+            var index = users.FindIndex(u => u.Id == updatedUser.Id);
+            if (index != -1)
+            {
+                users[index] = updatedUser;
+            }
+        }
+        catch (Exception ex)
+        {
+            toastService.ShowError(ex.Message);
+        }
+    }
+    private void DeleteUser(User args)
+    {
+        users.Remove(args);
+        userService.Delete(args);
+        StateHasChanged();
     }
     void IDisposable.Dispose()
     {
