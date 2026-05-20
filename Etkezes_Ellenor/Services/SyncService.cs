@@ -62,13 +62,27 @@ namespace Etkezes_Ellenor.Services
                     var loginUsersToUpdate = await apiHelper.Get<List<LoginUser>>($"/sync/loginusers/{lastLoginUserSyncDateDown:O}");
                     if (loginUsersToUpdate != null)
                     {
-                        dbContext.LoginUsers.UpdateRange(loginUsersToUpdate);
-                        await dbContext.SaveChangesAsync();
+                        foreach (var loginUser in loginUsersToUpdate)
+                        {
+                            var localLoginUser = await dbContext.LoginUsers.FirstOrDefaultAsync(lu => lu.Id == loginUser.Id);
+                            if (localLoginUser != null)
+                            {
+                                dbContext.Entry(localLoginUser).CurrentValues.SetValues(loginUser);
+                                localLoginUser.UpdatedAt = DateTime.UtcNow;
+                                dbContext.LoginUsers.Update(localLoginUser);
+                            }
+                            else
+                            {
+                                dbContext.LoginUsers.Add(loginUser);
+                            }
+                        }
+                        var count = await dbContext.SaveChangesAsync();
                         dbContext.SyncDatas.Add(new SyncData
                         {
                             Table = "LoginUser",
                             Type = SyncType.Down,
-                            SyncDate = DateTime.UtcNow
+                            SyncDate = DateTime.UtcNow,
+                            Description = $"{count} login users updated."
                         });
                         await dbContext.SaveChangesAsync();
                         logger.LogInformation($"{loginUsersToUpdate.Count} login users synced successfully from server.");
@@ -96,13 +110,26 @@ namespace Etkezes_Ellenor.Services
                     var usersToUpdate = await apiHelper.Get<List<User>>($"/sync/users/{lastUserSyncDateDown:O}");
                     if (usersToUpdate != null)
                     {
-                        dbContext.Users.UpdateRange(usersToUpdate);
-                        await dbContext.SaveChangesAsync();
+                        foreach (var user in usersToUpdate)
+                        {
+                            var localUser = await dbContext.Users.FirstOrDefaultAsync(u => u.Id == user.Id);
+                            if (localUser != null)
+                            {
+                                dbContext.Users.Update(user);
+                                localUser.Updated = DateTime.UtcNow;
+                            }
+                            else
+                            {
+                                dbContext.Users.Add(user);
+                            }
+                        }
+                        var count=await dbContext.SaveChangesAsync();
                         dbContext.SyncDatas.Add(new SyncData
                         {
                             Table = "User",
                             Type = SyncType.Down,
-                            SyncDate = DateTime.UtcNow
+                            SyncDate = DateTime.UtcNow,
+                            Description = $"{count} users updated."
                         });
                         await dbContext.SaveChangesAsync();
                         logger.LogInformation($"{usersToUpdate.Count} users synced successfully from server.");
