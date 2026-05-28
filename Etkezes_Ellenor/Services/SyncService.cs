@@ -62,6 +62,7 @@ namespace Etkezes_Ellenor.Services
                     var loginUsersToUpdate = await apiHelper.Get<List<LoginUser>>($"/sync/loginusers/{lastLoginUserSyncDateDown:O}");
                     if (loginUsersToUpdate != null)
                     {
+                        var count = 0;
                         foreach (var loginUser in loginUsersToUpdate)
                         {
                             var localLoginUser = await dbContext.LoginUsers.FirstOrDefaultAsync(lu => lu.Id == loginUser.Id);
@@ -75,8 +76,9 @@ namespace Etkezes_Ellenor.Services
                             {
                                 dbContext.LoginUsers.Add(loginUser);
                             }
+                            count =+ await dbContext.SaveChangesAsync();
                         }
-                        var count = await dbContext.SaveChangesAsync();
+                        //var count = await dbContext.SaveChangesAsync();
                         dbContext.SyncDatas.Add(new SyncData
                         {
                             Table = "LoginUser",
@@ -110,6 +112,7 @@ namespace Etkezes_Ellenor.Services
                     var usersToUpdate = await apiHelper.Get<List<User>>($"/sync/users/{lastUserSyncDateDown:O}");
                     if (usersToUpdate != null)
                     {
+                        var count = 0;
                         foreach (var user in usersToUpdate)
                         {
                             var localUser = await dbContext.Users.FirstOrDefaultAsync(u => u.Id == user.Id);
@@ -122,8 +125,8 @@ namespace Etkezes_Ellenor.Services
                             {
                                 dbContext.Users.Add(user);
                             }
+                            count =+ await dbContext.SaveChangesAsync();
                         }
-                        var count=await dbContext.SaveChangesAsync();
                         dbContext.SyncDatas.Add(new SyncData
                         {
                             Table = "User",
