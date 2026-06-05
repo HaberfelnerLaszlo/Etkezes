@@ -17,7 +17,6 @@ namespace FingerPrintService
     {
         IntPtr mDevHandle = IntPtr.Zero;
         IntPtr mDBHandle = IntPtr.Zero;
-        //string mDevName = "";
         int devCount = 0;
         public string ErrorInfo = "", SuccessInfo = "";
         bool bIsTimeToDie = false;
@@ -269,48 +268,58 @@ namespace FingerPrintService
                         MessageChanged?.Invoke(this, new FPMessageChangedEventArgs(ErrorInfo, true, ret));
                         Console.WriteLine("Identification failed, switching to matching mode for next attempt...");
                         ProcessId = 2; // Switch to matching mode for the next attempt
+                        FingerMatching();
                         return;
                     }
                 }
                 case 2:
-                {
-                    // Matching mode processing
-                    Console.WriteLine("Processing in matching mode...");
-                    int fid = 0;
-                    int ret = 0;
-                    int fpId = 0;
-                        foreach (var fp in RegisteredFingerprints)
                     {
-                        RegTmp = Base64Converter.ToBytes(fp.Value).Bytes;
-                        cbRegTmp = RegTmp.Length;
-                        int aktRet = 0;
-                        ret = ZkfpLinux.ZKFPM_DBMatch(mDBHandle, CapTmp, cbCapTmp, RegTmp, cbRegTmp, ref fid);
-                        if (aktRet < ret)
-                        {
-                            SuccessInfo = "Sikeres ujjlenyomat egyeztetés, score=" + ret + "!";
-                            fpId = fp.Key;
-                        }
-                    }
-                    if (0 < ret)
-                    {
-                        SuccessInfo = "Sikeres ujjlenyomat egyeztetés, score=" + ret + "!";
-                        MessageChanged?.Invoke(this, new FPMessageChangedEventArgs(SuccessInfo, false,fpId));
-                    }
-                    else
-                    {
-                        ErrorInfo = "Sikertelen ujjlenyomat egyeztetés, hibakód= " + ret;
-                        MessageChanged?.Invoke(this, new FPMessageChangedEventArgs(ErrorInfo, true, ret));
-                        _logger.LogError(ErrorInfo, ret);
-                        //return;
-                    }
-                        Console.WriteLine("Matching successful, switching back to identification mode for next attempt...");
-                        ProcessId = 1;
+                        // Matching mode processing
+                        Console.WriteLine("Processing in matching mode...");
+                        FingerMatching();
                         return;
-                }
+                    }
                 default:
                     break;
             }
         }
+
+        private void FingerMatching()
+        {
+            int fid = 0;
+            int ret = 0;
+            int fpId = 0;
+            int aktRet = 0;
+            foreach (var fp in RegisteredFingerprints)
+            {
+                RegTmp = Base64Converter.ToBytes(fp.Value).Bytes;
+                cbRegTmp = RegTmp.Length;
+                aktRet = ZkfpLinux.ZKFPM_DBMatch(mDBHandle, CapTmp, cbCapTmp, RegTmp, cbRegTmp, ref fid);
+                if (aktRet > ret)
+                {
+                    SuccessInfo = "Sikeres ujjlenyomat egyeztetés, score=" + ret + "!";
+                    fpId = fid;
+                    ret = aktRet;
+                }
+            }
+            if (0 < ret)
+            {
+                SuccessInfo = "Sikeres ujjlenyomat egyeztetés, score=" + ret + "!";
+                SuccessIdentification?.Invoke(this, new FPSuccessIdentificationEventArgs(fpId, ret));
+                //MessageChanged?.Invoke(this, new FPMessageChangedEventArgs(SuccessInfo, false, fpId));
+            }
+            else
+            {
+                ErrorInfo = "Sikertelen ujjlenyomat egyeztetés, hibakód= " + ret;
+                MessageChanged?.Invoke(this, new FPMessageChangedEventArgs(ErrorInfo, true, ret));
+                _logger.LogError(ErrorInfo, ret);
+                //return;
+            }
+            Console.WriteLine("Matching successful, switching back to identification mode for next attempt...");
+            ProcessId = 1;
+            return;
+        }
+
         private void Register()
         {
             //MemoryStream ms = new MemoryStream();
@@ -572,7 +581,7 @@ namespace FingerPrintService
         }
         public void Dispose() => Close();
 
-        int IFPService.Matching(List<FingerPrintData> fingerPrints)
+        public int Matching(List<FingerPrintData> fingerPrints)
         {
             int fpId = 0;
             foreach (var fp in fingerPrints)
