@@ -11,9 +11,9 @@ namespace Etkezes_Ellenor.Services
         {
             try
             {
-                if (etkezesDB.Etkezesek.Any(e => e.UserId == userId && e.Darab>0 && !e.Elfogyasztva))
+                if (etkezesDB.Etkezesek.Any(e => e.UserId == userId && e.Darab>0))
                 {
-                    var etkezo = etkezesDB.Etkezesek.First(e => e.UserId == userId && !e.Elfogyasztva);
+                    var etkezo = etkezesDB.Etkezesek.First(e => e.UserId == userId);
                     //if (etkezo == null)
                     //{
                     //    

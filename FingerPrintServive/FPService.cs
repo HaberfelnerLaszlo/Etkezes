@@ -127,6 +127,10 @@ namespace FingerPrintService
                 MessageChanged?.Invoke(this, new FPMessageChangedEventArgs(ErrorInfo, true));
                 return;
             }
+            else{
+                _logger.LogInformation("Device opened successfully, handle: {DevHandle}", mDevHandle);
+                SuccessInfo = "Eszköz megnyitva, kész a használatra!";
+                MessageChanged?.Invoke(this, new FPMessageChangedEventArgs(SuccessInfo, false, DEVICE_OPEN));
             }
             if (IntPtr.Zero == (mDBHandle = ZkfpLinux.ZKFPM_DBInit()))
             {
@@ -159,6 +163,7 @@ namespace FingerPrintService
             bIsTimeToDie = false;
 
         }
+        }
         private void DoCapture()
         {
             Console.WriteLine("Starting fingerprint capture thread...");
@@ -190,6 +195,7 @@ namespace FingerPrintService
                     Console.WriteLine("Processing in registration mode...");
                     if (cbRegTmp <= 0)
                     {
+
                         ErrorInfo = "Kérem, először regisztrálja az ujjlenyomatát!";
                         MessageChanged?.Invoke(this, new FPMessageChangedEventArgs(ErrorInfo, true, -1));
                         cbRegTmp = RegTmp.Length;

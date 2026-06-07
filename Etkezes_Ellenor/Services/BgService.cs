@@ -28,8 +28,8 @@ namespace Etkezes_Ellenor.Services
         {
             try
             {
-                  if(await _syncService.GetSyncDates()) {_logger.LogInformation("Adatbázis szinkronizálás."); }
-                else { _logger.LogInformation($"Adatbázis szinkronizálás sikertelen. Hibaüzenet: {_syncService.ErrorMessage}"); }
+                //  if(await _syncService.GetSyncDates()) {_logger.LogInformation("Adatbázis szinkronizálás."); }
+                //else { _logger.LogInformation($"Adatbázis szinkronizálás sikertelen. Hibaüzenet: {_syncService.ErrorMessage}"); }
                 await Task.CompletedTask;
             }
             catch (Exception e)
@@ -52,6 +52,7 @@ namespace Etkezes_Ellenor.Services
                     _userService.UserLoading().Wait(cancellationToken);
                     _fpService.SwitchIdentifyMode(true);
                     _logger.LogInformation("Azonosítás bekapcsolva.");
+                    return Task.CompletedTask;
                 }
                 _logger.LogError("Nem sikerült törölni az adatbázist, az azonosítás nem kapcsolható be!");
                 return Task.CompletedTask;

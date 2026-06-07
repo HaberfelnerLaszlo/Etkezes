@@ -89,15 +89,15 @@
         </FluentGrid>
     </FluentBodyContent>
     <FluentFooter>
-        2026.05.20 11:57
+        2026.06.08 11:57
         <FluentSpacer/>
         <p>@message</p>
         <FluentSpacer/>
-        Verzió: 0.6.8
+        Verzió: 0.6.9
     </FluentFooter>
 </FluentLayout>
 @code {
-    string message = "A jók", errorMessage = "A hibák";
+    string message = "", errorMessage = "";
     bool isDeviceConnected = false;
     LoginUser? identifiedUser = null;
     List<FingerPrintData> fingerPrints = [];
@@ -126,6 +126,7 @@
             }
             else
             {
+                await fpService.Open();
                 toastService.ShowError("Nincs csatlakoztatva ujjlenyomat olvasó eszköz!");
                 StateHasChanged();
             }
@@ -149,9 +150,6 @@
             // }
             // else toastService.ShowError("Nem sikerült törölni az adatbázist, az azonosítás nem kapcsolható be!");
             StateHasChanged();
-        }
-        if (!isDeviceConnected){
-            await fpService.Open();
         }
     }
     private async void OnMessageChanged(object sender, FPMessageChangedEventArgs e)
