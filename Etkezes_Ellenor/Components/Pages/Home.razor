@@ -99,6 +99,7 @@
 @code {
     string message = "", errorMessage = "";
     bool isDeviceConnected = false;
+    int devices_probe = 0;
     LoginUser? identifiedUser = null;
     List<FingerPrintData> fingerPrints = [];
     Adat[] adatok = new Adat[4];
@@ -127,28 +128,17 @@
             else
             {
                 await fpService.Open();
-                toastService.ShowError("Nincs csatlakoztatva ujjlenyomat olvasó eszköz!");
-                StateHasChanged();
+                if (isDeviceConnected)
+                {
+                    toastService.ShowSuccess("Ujjlenyomat olvasó eszköz csatlakoztatva.");
+                }
+                else
+                {
+                    toastService.ShowError("Nincs csatlakoztatva ujjlenyomat olvasó eszköz!");
+                }
+                //StateHasChanged();
             }
             identifiedUser = dataService.GetLoginUser();
-            @* var users = dataService.GetUsers().ToList();
-            foreach (var item in users)
-            {
-                if (userService.UserExists(item.Id))
-                {
-                    continue;
-                }
-                userService.AddUser(item);
-            } *@
-            //Todo: Ide teljesen más lesz!
-            // if (fpService.ClearDb()) 
-            // { 
-            //     await dataService.LoginUsersLoad();
-            //     await userService.UserLoading();
-            //     fpService.SwitchIdentifyMode(true);
-            //     errorMessage = "Azonosítás bekapcsolva.";
-            // }
-            // else toastService.ShowError("Nem sikerült törölni az adatbázist, az azonosítás nem kapcsolható be!");
             StateHasChanged();
         }
     }
@@ -294,7 +284,7 @@
                 }
                 else if (etkezo.Elfogyasztva)
                 {
-                    AdatRendezo(new Adat("images/red-x-line-icon.svg", adat.Name, ""));
+                    AdatRendezo(new Adat("images/rounded-red-exclamation.png", adat.Name, ""));
                     toastService.ShowWarning($"{adat.Name} étkezést már elfogyasztotta! FpId: {fpId}");
                 }
                 else

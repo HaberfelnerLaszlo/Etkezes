@@ -65,7 +65,7 @@ namespace Etkezes_Ellenor.Services
                         var count = 0;
                         foreach (var loginUser in loginUsersToUpdate)
                         {
-                            var localLoginUser = await dbContext.LoginUsers.FirstOrDefaultAsync(lu => lu.Id == loginUser.Id);
+                            var localLoginUser = await dbContext.LoginUsers.AsNoTracking().FirstOrDefaultAsync(lu => lu.Id == loginUser.Id);
                             if (localLoginUser != null)
                             {
                                 dbContext.Entry(localLoginUser).CurrentValues.SetValues(loginUser);
@@ -115,11 +115,12 @@ namespace Etkezes_Ellenor.Services
                         var count = 0;
                         foreach (var user in usersToUpdate)
                         {
-                            var localUser = await dbContext.Users.FirstOrDefaultAsync(u => u.Id == user.Id);
+                            var localUser = await dbContext.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == user.Id);
                             if (localUser != null)
                             {
+                                user.Updated = DateTime.UtcNow;
                                 dbContext.Users.Update(user);
-                                localUser.Updated = DateTime.UtcNow;
+                                //localUser.Updated = DateTime.UtcNow;
                             }
                             else
                             {

@@ -28,8 +28,8 @@ namespace Etkezes_Ellenor.Services
         {
             try
             {
-                //  if(await _syncService.GetSyncDates()) {_logger.LogInformation("Adatbázis szinkronizálás."); }
-                //else { _logger.LogInformation($"Adatbázis szinkronizálás sikertelen. Hibaüzenet: {_syncService.ErrorMessage}"); }
+                if(await _syncService.GetSyncDates()) {_logger.LogInformation("Adatbázis szinkronizálás."); }
+                else { _logger.LogInformation($"Adatbázis szinkronizálás sikertelen. Hibaüzenet: {_syncService.ErrorMessage}"); }
                 await Task.CompletedTask;
             }
             catch (Exception e)
