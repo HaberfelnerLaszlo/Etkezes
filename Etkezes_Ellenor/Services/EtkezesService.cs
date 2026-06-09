@@ -1,6 +1,7 @@
 ﻿using Etkezes_Ellenor.Data;
 
 using Etkezes_Models;
+using Microsoft.EntityFrameworkCore;
 
 namespace Etkezes_Ellenor.Services
 {
@@ -27,6 +28,23 @@ namespace Etkezes_Ellenor.Services
             {
                 OnError?.Invoke(this, new(ex.Message, ex.HResult.ToString()));
                 return null;
+            }
+        }
+        public async Task<IQueryable<Etkezok>> GetEtkezesek()
+        {
+            try
+            {
+                var etkezesek = etkezesDB.Etkezesek.AsNoTracking().AsQueryable();
+                if (etkezesek == null)
+                {
+                    return new List<Etkezok>().AsQueryable();
+                }
+                return etkezesek;
+            }
+            catch (Exception ex)
+            {
+                OnError?.Invoke(this, new(ex.Message, ex.HResult.ToString()));
+                return new List<Etkezok>().AsQueryable();
             }
         }
         public async Task IsElfogyasztva(long userId) 

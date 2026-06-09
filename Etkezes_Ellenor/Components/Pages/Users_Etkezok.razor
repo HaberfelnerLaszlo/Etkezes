@@ -1,5 +1,5 @@
-﻿@page "/users"
-@inject UserService userService
+﻿@page "/etkezok"
+@inject EtkezesService etkezesService
 @inject DataService dataService
 @inject ILogger<Users> logger
 @inject IToastService toastService
@@ -9,23 +9,18 @@
 <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween">
     <FluentButton Appearance="Appearance.Accent" OnClick="@(() => navigationManager.NavigateTo("/"))">Vissza a főoldalra</FluentButton>
     <FluentSpacer />
-    <h3>Diákok karbantartása</h3>
+    <h3>Mai étkezések</h3>
 </FluentStack>
-<PageTitle>Diákok karbantartása</PageTitle>
+<PageTitle>Étkezések</PageTitle>
 @if (isUserLogin)
 {
-    <FluentDataGrid Items="@users">
+    <FluentDataGrid Items="@etkezesek">
     <PropertyColumn Property="u=>u.Name" Title="Név" />
-    <PropertyColumn Property="u => u.Osztaly" Title="Osztály" />
-    <PropertyColumn Property="u => u.Etkezik" Title="Étkezik?" />
-    <PropertyColumn Property="u => u.FpId" Title="Id" />
-        <PropertyColumn Property="@((u) => String.IsNullOrWhiteSpace(u.FingerPrint1) ? "Nincs" : "Van")" Title="1. Ujj" />
-        <PropertyColumn Property="@((u) => String.IsNullOrWhiteSpace(u.FingerPrint2) ? "Nincs" : "Van")" Title="2. Ujj" />
+    <PropertyColumn Property="u => u.Adag" Title="Adag" />
+    <PropertyColumn Property="u => u.Menu" Title="Menü" />
+    <PropertyColumn Property="u => u.Darab" Title="Darab" />
+    <PropertyColumn Property="@((u) => u.Elfogyasztva ? "Igen" : "Nem")" Title="Étkezett" />
     <PropertyColumn Property="u => u.Updated" Title="Frissítés" />
-    <TemplateColumn Title="Műveletek">
-        <FluentButton Appearance="Appearance.Accent" OnClick="@(() => EditUser(context))">Szerkesztés</FluentButton>
-        <FluentButton Appearance="Appearance.Accent" OnClick="@(() => DeleteUser(context))">Törlés</FluentButton>
-    </TemplateColumn>
 </FluentDataGrid>
 }
 else
@@ -34,7 +29,7 @@ else
     <FluentButton Appearance="Appearance.Accent" OnClick="@(() => navigationManager.NavigateTo("/"))">Bejelentkezés</FluentButton>
 }
 @code {
-    IQueryable<User> users = new List<User>().AsQueryable();
+    IQueryable<Etkezok> etkezesek = new List<Etkezok>().AsQueryable();
     bool isUserLogin = false;
     protected override async Task OnInitializedAsync()
     {
@@ -44,10 +39,10 @@ else
             toastService.ShowInfo(args.Message);
         };
         isUserLogin = dataService.IsUserLogin();
-        users = userService.GetAllUsers().AsQueryable();
-        users = users.OrderBy(u => u.Osztaly).ThenBy(u => u.Name);
+        etkezesek = await etkezesService.GetEtkezesek();
+        etkezesek = etkezesek.OrderBy(u => u.Name);
     }
-    private async Task EditUser(User user)
+    @* private async Task EditUser(User user)
     {
         DialogParameters parameters = new()
         {
@@ -89,7 +84,7 @@ else
             SecondaryAction = "Mégse",
             OnSecondaryAction = EventCallback.Factory.Create<ToastResult>(this, () => { return; }),
         });
-    }
+    }*@
     public void Dispose()
     {
         dataService.DataServiceMessage -= (sender, args) =>
@@ -97,5 +92,5 @@ else
             logger.LogInformation("DataService üzenet: {Message}", args.Message);
             toastService.ShowInfo(args.Message);
         };
-    }
+    } 
 }

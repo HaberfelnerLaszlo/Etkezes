@@ -72,6 +72,7 @@
                     <FluentButton Appearance="Appearance.Neutral" OnClick="@(() => navigationManager.NavigateTo("/reg"))">Regisztráció</FluentButton>
                     <FluentButton Appearance="Appearance.Neutral" OnClick="@(() => navigationManager.NavigateTo("/loginusers"))">Felhasználók</FluentButton>
                     <FluentButton Appearance="Appearance.Neutral" OnClick="@(() => navigationManager.NavigateTo("/users"))">Diákok</FluentButton>
+                    <FluentButton Appearance="Appearance.Neutral" OnClick="@(() => navigationManager.NavigateTo("/etkezok"))">Mai étkezések</FluentButton>
                </FluentStack>
             }
         </FluentStack>
@@ -170,9 +171,12 @@
                 await InvokeAsync(()=>StateHasChanged());
                 return;
             }
-            errorMessage = e.Message;
-            toastService.ShowError(e.Message);
-            Console.WriteLine($"Error: {errorMessage} Code: {e.Code}");
+            else
+            {
+                errorMessage = e.Message;
+                toastService.ShowError(e.Message);
+                Console.WriteLine($"Error: {errorMessage} Code: {e.Code}");
+            }
         }
         else
         {
@@ -212,12 +216,6 @@
         }
         return false;
     }
-    // private void OnRegistationSuccess(object sender, FPRegisteredEventArgs e) 
-    // {
-    //     message = e.FingerPrint; 
-    //     toastService.ShowSuccess(e.FingerPrint); 
-    //     Console.WriteLine($"Registration Success: {message}"); 
-    // }
     // Add this method to handle the SuccessIdentification event
     private async void OnIdentificationSuccess(object? sender, FPSuccessIdentificationEventArgs e)
     {
@@ -284,7 +282,7 @@
                 }
                 else if (etkezo.Elfogyasztva)
                 {
-                    AdatRendezo(new Adat("images/rounded-red-exclamation.png", adat.Name, ""));
+                    AdatRendezo(new Adat("images/rounded-red-exclamation.png",$"{adat.Name} étkezést már elfogyasztotta!", ""));
                     toastService.ShowWarning($"{adat.Name} étkezést már elfogyasztotta! FpId: {fpId}");
                 }
                 else
@@ -301,7 +299,6 @@
                         else AdatRendezo(new Adat("images/bubble-letter-b-green-icon.svg", etkezo.Name, etkezo.Menu));
                     }
                 }
-                //toastService.ShowSuccess("Sikeres azonosítás! Üdvözlünk az étkezők között!");
             }
             return true;
         }

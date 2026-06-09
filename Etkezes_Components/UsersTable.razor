@@ -1,16 +1,19 @@
 @inject IDialogService dialogService
 
 <FluentDataGrid TGridItem="User" Items="Users.AsQueryable()" ShowHover="true" Pagination="pagination" Style="overflow-y:hidden;">
-    <PropertyColumn Property="u => u.Name" Title="Név" />
-    <PropertyColumn Property="u => u.Osztaly" Title="Osztály" />
-    <PropertyColumn Property="u => u.Etkezik" Title="Étkezik?" />
-    <TemplateColumn Title="Mûveletek">
-        <FluentButton Appearance="Appearance.Accent" OnClick="@(() => EditUser(context))">Szerkesztés</FluentButton>
-        <FluentButton Appearance="Appearance.Accent" OnClick="@(() => DeleteUser(context))">Törlés</FluentButton>
+    <PropertyColumn Property="u => u.Name" Title="Nï¿½v" />
+    <PropertyColumn Property="u => u.Osztaly" Title="Osztï¿½ly" />
+    <PropertyColumn Property="u => u.Etkezik" Title="ï¿½tkezik?" />
+    <PropertyColumn Property="u => u.FpId" Title="AzonosÃ­tÃ³" />
+    <PropertyColumn Property="@(u => string.IsNullOrEmpty(u.FingerPrint1) ? "Nincs" : "Van")" Title="Ujj_1" />
+    <PropertyColumn Property="@(u => string.IsNullOrEmpty(u.FingerPrint2) ? "Nincs" : "Van")" Title="Ujj_2" />
+    <TemplateColumn Title="MÅ±veletek">
+        <FluentButton Appearance="Appearance.Accent" OnClick="@(() => EditUser(context))">Szerkeszts</FluentButton>
+        <FluentButton Appearance="Appearance.Accent" OnClick="@(() => DeleteUser(context))">TTrls</FluentButton>
     </TemplateColumn>
 </FluentDataGrid>
 <FluentPaginator State="@pagination" />
-@* <FluentButton OnClick="@(async ()=>await Save.InvokeAsync(Users))" Disabled="!IsEdited">Mentés</FluentButton> *@
+@* <FluentButton OnClick="@(async ()=>await Save.InvokeAsync(Users))" Disabled="!IsEdited">Mentï¿½s</FluentButton> *@
 
 @code{
     [Parameter]
