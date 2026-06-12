@@ -27,6 +27,8 @@
         <FluentTextField @bind-Value="newUser.Name" Label="Név" Required="true" />
         <FluentSelect TOption="string" Label="Osztály" Required="true" Items="@osztalyok" OptionValue="@(o=>o)" OptionText="@(o=>o + " osztály")" Placeholder="Válassza ki az osztályt" SelectedOption="newUser.Osztaly"/>
         <FluentSwitch @bind-Value="newUser.Etkezik" Label="Étkezik?" />
+        <FluentButton OnClick="@(()=>FingerChange(1))">1. Ujjlenyomat frissítése</FluentButton>
+        <FluentButton OnClick="@(()=>FingerChange(2))">2. Ujjlenyomat frissítése</FluentButton>
         <FluentButton Appearance="Appearance.Accent" Type="ButtonType.Submit">Mentés</FluentButton>
     </FluentStack>
 </FluentEditForm>
@@ -58,10 +60,11 @@ else
 }
 
 @code {
-    private User newUser = new User();
+    [Parameter]
+    public User newUser { get; set; } = new User();
     IList<string> osztalyok = new List<string> { "5.a", "5.b", "5.c", "6.a", "6.b", "6.c", "7.a", "7.b", "7.c", "8.a", "8.b", "8.c", "9.a", "9.b", "10.a", "10.b", "11.a", "11.b", "12.a", "12.b", };
     int fpIndex = 1;
-    bool editUser = false, isLogin = false;
+    bool editUser = false, isLogin = false, isChanging = false;
     string message = string.Empty;
     protected override async Task OnInitializedAsync()
     {
@@ -105,13 +108,21 @@ else
         if (fpIndex == 1)
         {
             newUser.FingerPrint1 = e.FingerPrint;
-            newUser.FpId = e.Fid;
+            if(isChanging)
+            {
+                isChanging = false;
+            }
+            else
+            {
+                newUser.FpId = e.Fid;
+            }
             toastService.ShowSuccess($"Első ujjlenyomat regisztrálva: {e.FingerPrint.Substring(0,10)}");
             fpIndex++;
         }
         else if (fpIndex == 2)
         {
             newUser.FingerPrint2 = e.FingerPrint;
+            isChanging = false;
             toastService.ShowSuccess($"Második ujjlenyomat regisztrálva: {e.FingerPrint.Substring(0,10)}");
             fpIndex++;
         }
@@ -134,6 +145,15 @@ else
             toastService.ShowSuccess("Regisztráció mód bekapcsolva.");
             await fpService.NewFingerprintAsync(fpIndex);
             message = "Kérem érintse meg az ujjlenyomat olvasót!";
+        }
+    }
+    private async Task FingerChange(int index)
+    {
+        if (index == 1 || index == 2)
+        {
+            fpIndex = index;
+            isChanging = true;
+            await RegisterFingerprint();
         }
     }
     private async Task SaveUser()

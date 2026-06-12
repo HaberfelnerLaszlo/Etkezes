@@ -190,9 +190,20 @@ namespace Etkezes_Nyilvantarto.Services
                 XSSFWorkbook xssWorkbook = new XSSFWorkbook(stream);
                 sheet = xssWorkbook.GetSheetAt(0);
                 int rowNumber = 0;
-                while (string.IsNullOrEmpty(sheet.GetRow(rowNumber)?.GetCell(0)?.StringCellValue) || !sheet.GetRow(rowNumber).GetCell(0).StringCellValue.ToLower().Contains("név"))
+                int cellNumber = 0;
+                while (string.IsNullOrEmpty(sheet.GetRow(rowNumber)?.GetCell(cellNumber)?.StringCellValue) || !sheet.GetRow(rowNumber).GetCell(cellNumber).StringCellValue.ToLower().Contains("név"))
                 {
                     rowNumber++;
+                    if(rowNumber > sheet.LastRowNum)
+                    {
+                        cellNumber++;
+                        rowNumber = 0;
+                    }
+                    if(cellNumber > sheet.GetRow(0).LastCellNum)
+                    {
+                        OnMessage?.Invoke(this, new OnMessageEventArgs("Nem található a szükséges oszlopok egyike a fájlban. Kérem ellenőrizze a fájl formátumát.", 200));
+                        return [];
+                    }
                 }
                 IRow headerRow = sheet.GetRow(rowNumber);
                 int cellCount = headerRow.LastCellNum;
@@ -278,6 +289,17 @@ namespace Etkezes_Nyilvantarto.Services
                 }
                 return etkezesek;
             }
+            catch (NPOI.OldFileFormatException ex)
+            {
+                OnMessage?.Invoke(this, new OnMessageEventArgs($"Régi fájl formátum! Kérem válassza ki a megfelelő fájlt: {ex.Message}", 200));
+                return [];
+            }
+            catch(NPOI.UnsupportedFileFormatException ex)
+            {
+                OnMessage?.Invoke(this, new OnMessageEventArgs($"Nem támogatott fájl formátum! Kérem válassza ki a megfelelő fájlt: {ex.Message}", 200));
+                return [];
+            }
+            
             catch (Exception ex)
             {
                 OnMessage?.Invoke(this, new OnMessageEventArgs($"Hiba történt az étkezések beolvasása során: {ex.Message}", 201));

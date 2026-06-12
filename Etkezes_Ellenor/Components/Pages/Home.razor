@@ -90,17 +90,17 @@
         </FluentGrid>
     </FluentBodyContent>
     <FluentFooter>
-        2026.06.08 11:57
+        2026.06.11 11:57
         <FluentSpacer/>
         <p>@message</p>
         <FluentSpacer/>
-        Verzió: 0.6.9
+        Verzió: 0.6.10
     </FluentFooter>
 </FluentLayout>
 @code {
     string message = "", errorMessage = "";
     bool isDeviceConnected = false;
-    int devices_probe = 0;
+    int etkezokSzama = 0;
     LoginUser? identifiedUser = null;
     List<FingerPrintData> fingerPrints = [];
     Adat[] adatok = new Adat[4];
@@ -116,6 +116,8 @@
         adatok[3] = new Adat("images/question-mark-circle-outline-icon.svg", "3", "");
         fingerPrints.AddRange(await loginService.GetAllLoginUserFPTmp());
         fingerPrints.AddRange(await userService.GetAllUserFPTmp());
+        etkezokSzama = syncService.EtkezesCount;
+        message = $"A mai étkezők száma: {etkezokSzama} fő";
     }
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -221,6 +223,7 @@
     {
         if(LoginUserIdentify(e.Fid)) return;
         await UserIdentify(e.Fid);
+        StateHasChanged();
     }
     private bool LoginUserIdentify(int fpId)
     {
@@ -288,6 +291,7 @@
                 else
                 {
                     await etkezesService.IsElfogyasztva(etkezo.UserId);
+                    etkezokSzama--;
                     if (etkezo.Adag.Contains("kis", StringComparison.CurrentCultureIgnoreCase))
                     {
                         if (etkezo.Menu.Contains("A")) AdatRendezo(new Adat("images/bubble-letter-a-lowercase-green-icon.svg", etkezo.Name, etkezo.Menu));

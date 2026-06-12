@@ -7,6 +7,7 @@ namespace Etkezes_Ellenor.Services
     public class SyncService(ApiHelper apiHelper, EtkezesDBcontext dbContext, ILogger<SyncService> logger)
     {
         public string ErrorMessage { get; private set; } = string.Empty;
+        public int EtkezesCount { get; private set; }
         public async Task<bool> GetSyncDates()
         {
             try
@@ -255,6 +256,7 @@ namespace Etkezes_Ellenor.Services
                 var etkezesekToUpdate = await apiHelper.Get<List<EtkezokView>>("/maietkezesek");
                 if (etkezesekToUpdate != null)
                 {
+                    EtkezesCount=etkezesekToUpdate.Count;
                     foreach (var etkezes in etkezesekToUpdate)
                     {
                         var localEtkezes = await dbContext.Etkezesek.FirstOrDefaultAsync(e=>e.UserId == etkezes.UserId);

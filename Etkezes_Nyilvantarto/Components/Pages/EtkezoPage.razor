@@ -73,7 +73,7 @@ else
                     var etkezok = excelService.ReadMaiEtkezesek(stream);
                     if (etkezok.Count == 0)
                     {
-                        //toastService.ShowError("Nem megfelelő fájl formátum! Kérem válassza ki a mai étkezők fájlját!");
+                        toastService.ShowError("Nem megfelelő fájl formátum! Kérem válassza ki a mai étkezők fájlját!");
                         return;
                     }
                     maiEtkezesek.ForEach(async e =>
